@@ -274,7 +274,8 @@ cloudrank/
 
 *   **首次使用**: 首次生成词云或插件加载时，可能需要一些时间来初始化分词库 (如 `jieba`) 和其他资源。
 *   **中文字体**: 为确保中文在词云中正确显示，建议在配置中明确指定一个包含中文字符的字体路径 (`font_path`)。插件会尝试使用内置的霞鹜文楷字体，如果加载失败或需要特定字体，则此配置项非常重要。
-*   **资源存储**: 插件会在 AstrBot 的数据目录 (通常是 `AstrBot/data/plugins/cloudrank/` 或由 `StarTools.get_data_dir(PLUGIN_NAME)` 返回的路径) 下存储字体、停用词、生成的图片缓存以及聊天记录数据库。请确保 AstrBot 运行的用户对此目录有读写权限，并有足够的存储空间。
+*   **资源存储**: 插件会在 AstrBot 的数据目录 (通常是 `AstrBot/data/plugins/cloudrank/` 或由 `StarTools.get_data_dir(PLUGIN_NAME)` 返回的路径) 下存储字体、停用词、生成的图片缓存。请确保 AstrBot 运行的用户对此目录有读写权限，并有足够的存储空间。
+*   **消息数据存储**: 本插件的消息历史记录**不**会在其独立的插件数据目录 (`AstrBot/data/plugins/cloudrank/`)下创建单独的数据库文件。相反，所有聊天记录都存储在 **AstrBot 的中央 SQLite 数据库**中，具体表名为 `wordcloud_message_history`。该数据库文件的位置通常在`TestEnv\AstrBot\data\data_v3.db`下，因此，查看或备份消息数据需要访问 AstrBot 的主数据库。
 *   **性能考虑**: 记录和分析大量聊天数据可能会消耗一定的系统资源。对于非常活跃的机器人或服务器资源有限的情况，请适当调整历史记录天数和词云生成频率。
 *   **依赖冲突**: 确保 `requirements.txt` 中列出的依赖版本与您的 Python 环境和其他 AstrBot 插件兼容。
 
