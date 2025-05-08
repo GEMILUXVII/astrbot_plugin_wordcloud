@@ -57,8 +57,7 @@
         "type": "string",
         "description": "词云背景颜色",
         "hint": "可使用颜色名称或十六进制值，如：white、black、#FFFFFF、#000000",
-        "default": "white",
-        "options": ["white", "black", "#F5F5F5", "#333333", "#F0F8FF", "#000080", "#87CEEB"]
+        "default": "white"
     },
     "colormap": {
         "type": "string",
@@ -85,6 +84,24 @@
         "hint": "决定词云的整体形状",
         "default": "circle",
         "options": ["circle", "rectangle"]
+    },
+    "show_user_ranking": {
+        "type": "bool",
+        "description": "是否在每日词云中显示用户活跃度排行",
+        "hint": "开启后，每日词云生成时会同时显示当天发言最活跃的用户排行榜",
+        "default": true
+    },
+    "ranking_user_count": {
+        "type": "int",
+        "description": "用户排行榜显示的人数",
+        "hint": "设置排行榜显示的用户数量，建议5-10之间",
+        "default": 5
+    },
+    "ranking_medals": {
+        "type": "string",
+        "description": "排行榜奖牌表情",
+        "hint": "用逗号分隔的表情符号，例如：🥇,🥈,🥉,🏅,🏅 前三名会使用前三个表情",
+        "default": "🥇,🥈,🥉,🏅,🏅"
     },
     "debug_mode": {
         "type": "bool",

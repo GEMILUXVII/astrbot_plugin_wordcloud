@@ -220,9 +220,9 @@ class WordCloudPlugin(Star):
                     session_info.append(f"会话 {session_id}: {msg_count}条消息")
                 
                 if session_info:
-                    logger.info(f"已有历史消息统计: {', '.join(session_info)}")
+                    logger.debug(f"已有历史消息统计: {', '.join(session_info)}")
                 else:
-                    logger.info("暂无历史消息记录")
+                    logger.debug("暂无历史消息记录")
             except Exception as e:
                 logger.error(f"获取历史消息统计失败: {e}")
             
@@ -759,6 +759,44 @@ class WordCloudPlugin(Star):
                 Comp.Image.fromFileSystem(image_path)
             ])
             
+            # 如果配置中启用了用户排行榜功能，则生成并发送排行榜
+            if self.config.get("show_user_ranking", True):
+                try:
+                    # 获取用户总数
+                    total_users = self.history_manager.get_total_users_today(session_id)
+                    
+                    # 获取活跃用户排名
+                    ranking_limit = self.config.get("ranking_user_count", 5)
+                    active_users = self.history_manager.get_active_users(session_id, days=1, limit=ranking_limit)
+                    
+                    if active_users and len(active_users) > 0:
+                        # 获取排行榜奖牌
+                        medals_str = self.config.get("ranking_medals", "🥇,🥈,🥉,🏅,🏅")
+                        medals = medals_str.split(",")
+                        if len(medals) < ranking_limit:
+                            # 如果配置的奖牌不够，用最后一个填充
+                            medals.extend([medals[-1]] * (ranking_limit - len(medals)))
+                        
+                        # 生成排行榜消息
+                        ranking_message = [
+                            f"📊 本群 {total_users} 位朋友共产生 {len(message_texts)} 条发言",
+                            f"👀 看下有没有你感兴趣的关键词?",
+                            f"\n活跃用户排行榜:"
+                        ]
+                        
+                        # 添加前N名用户
+                        for i, (user_id, user_name, count) in enumerate(active_users):
+                            medal = medals[i] if i < len(medals) else "🏅"
+                            ranking_message.append(f"{medal} {user_name} 贡献: {count}")
+                        
+                        # 添加感谢信息
+                        ranking_message.append("\n🎉 感谢这些朋友今天的分享! 🎉")
+                        
+                        # 发送排行榜
+                        yield event.plain_result("\n".join(ranking_message))
+                except Exception as ranking_error:
+                    logger.error(f"生成用户排行榜失败: {ranking_error}")
+            
         except Exception as e:
             logger.error(f"生成今日词云失败: {e}")
             import traceback
@@ -1101,6 +1139,54 @@ class WordCloudPlugin(Star):
                         str(path_obj) 
                     )
                     if self.debug_mode: logger.debug(f"Session {session_id} (Group {group_id}): scheduler.send_to_session [AFTER AWAIT]. Success: {send_success}")
+
+                    # 如果词云发送成功并且配置中启用了用户排行榜功能，则生成并发送排行榜
+                    if send_success and self.config.get("show_user_ranking", True):
+                        try:
+                            if self.debug_mode: logger.debug(f"Session {session_id} (Group {group_id}): Generating user ranking")
+                            
+                            # 获取用户总数
+                            total_users = await asyncio.to_thread(self.history_manager.get_total_users_today, session_id)
+                            
+                            # 获取活跃用户排名
+                            ranking_limit = self.config.get("ranking_user_count", 5)
+                            active_users = await asyncio.to_thread(self.history_manager.get_active_users, session_id, days=1, limit=ranking_limit)
+                            
+                            if active_users and len(active_users) > 0:
+                                # 获取排行榜奖牌
+                                medals_str = self.config.get("ranking_medals", "🥇,🥈,🥉,🏅,🏅")
+                                medals = medals_str.split(",")
+                                if len(medals) < ranking_limit:
+                                    # 如果配置的奖牌不够，用最后一个填充
+                                    medals.extend([medals[-1]] * (ranking_limit - len(medals)))
+                                
+                                # 生成排行榜消息
+                                ranking_message = [
+                                    f"📊 本群 {total_users} 位朋友共产生 {message_count} 条发言",
+                                    f"👀 看下有没有你感兴趣的关键词?",
+                                    f"\n活跃用户排行榜:"
+                                ]
+                                
+                                # 添加前N名用户
+                                for i, (user_id, user_name, count) in enumerate(active_users):
+                                    medal = medals[i] if i < len(medals) else "🏅"
+                                    ranking_message.append(f"{medal} {user_name} 贡献: {count}")
+                                
+                                # 添加感谢信息
+                                ranking_message.append("\n🎉 感谢这些朋友今天的分享! 🎉")
+                                
+                                # 发送排行榜
+                                if self.debug_mode: logger.debug(f"Session {session_id} (Group {group_id}): Sending user ranking")
+                                await self.scheduler.send_to_session(
+                                    session_id,
+                                    "\n".join(ranking_message)
+                                )
+                                if self.debug_mode: logger.debug(f"Session {session_id} (Group {group_id}): User ranking sent successfully")
+                        except Exception as ranking_error:
+                            logger.error(f"为会话 {session_id} (群 {group_id}) 生成用户排行榜失败: {ranking_error}")
+                            if self.debug_mode:
+                                import traceback
+                                logger.debug(f"排行榜错误详情: {traceback.format_exc()}")
 
                     if send_success:
                         if self.debug_mode: logger.debug(f"Successfully sent word cloud to group {group_id} (Session: {session_id})")

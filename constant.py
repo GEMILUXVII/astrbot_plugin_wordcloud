@@ -1,22 +1,22 @@
 """
-WordCloud插件常量定义
+CloudRank插件常量定义
 """
 import os
 from pathlib import Path
 
 # 插件信息
-PLUGIN_NAME = "wordcloud"
+PLUGIN_NAME = "cloudrank"
 PLUGIN_AUTHOR = "GEMILUXVII"
-PLUGIN_DESC = "词云插件 (WordCloud) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，支持定时或手动生成。"
-PLUGIN_VERSION = "1.0.0"
-PLUGIN_REPO = "https://github.com/GEMILUXVII/astrbot_plugin_wordcloud"
+PLUGIN_DESC = "词云与排名插件 (CloudRank) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。"
+PLUGIN_VERSION = "1.1.0"
+PLUGIN_REPO = "https://github.com/GEMILUXVII/astrbot_plugin_cloudrank"
 
 # 路径常量
 PLUGIN_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
 
 # DATA_DIR通过StarTools.get_data_dir动态获取
 # 这里只是定义一个占位变量，真正的目录会在初始化时设置
-# 正确的数据目录应该是：data/plugin_data/wordcloud
+# 正确的数据目录应该是：data/plugin_data/cloudrank
 DATA_DIR = None  # 由主模块初始化
 
 # 词云生成常量
