@@ -220,9 +220,9 @@ class WordCloudPlugin(Star):
                     session_info.append(f"会话 {session_id}: {msg_count}条消息")
                 
                 if session_info:
-                    logger.info(f"已有历史消息统计: {', '.join(session_info)}")
+                    logger.debug(f"已有历史消息统计: {', '.join(session_info)}")
                 else:
-                    logger.info("暂无历史消息记录")
+                    logger.debug("暂无历史消息记录")
             except Exception as e:
                 logger.error(f"获取历史消息统计失败: {e}")
             
