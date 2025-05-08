@@ -1,11 +1,11 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.1.0-blueviolet?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.1.1-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
-  <img src="https://img.shields.io/badge/updated-2024--05--09-brightgreen?style=flat-square" alt="Last Updated">
+  <img src="https://img.shields.io/badge/updated-2024--05--14-brightgreen?style=flat-square" alt="Last Updated">
 </div>
 
 ## 📝 介绍
@@ -301,6 +301,17 @@ cloudrank/
     *   **解决**: 修改配置项 `background_color` 设置背景色，修改 `colormap` 选择不同的词语配色方案。
 
 ## 📋 迭代日志
+
+### v1.1.1
+- 🔧 修复会话ID处理逻辑：
+  - 解决了群聊会话ID格式与AstrBot核心API不兼容的问题
+  - 为发送消息API添加正确的会话ID转换格式
+  - 修复了自动任务推送和排行榜功能在某些环境下的运行错误
+- 🚀 优化日志输出：
+  - 增加更详细的错误信息记录，方便问题排查
+  - 添加调试模式下的详细操作流程日志
+- 💾 改进数据处理：
+  - 标准化消息数量统计方法
 
 ### v1.1.0
 - ✨ 更新插件名称：从"WordCloud"更名为"CloudRank"
