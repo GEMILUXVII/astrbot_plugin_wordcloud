@@ -35,14 +35,6 @@ AstrBot 词云与排名插件是一款为 AstrBot 设计的强大工具，能够
 
 ## 🚀 安装方法
 
-### 方法一：通过 AstrBot 插件市场
-
-1.  在 AstrBot 的插件管理界面搜索 "CloudRank" 或 "词云与排名"。
-2.  点击安装并按照提示启用插件。
-3.  根据需要调整插件配置。
-
-### 方法二：手动安装
-
 1.  **下载插件**:
     *   通过 `git clone https://github.com/GEMILUXVII/astrbot_plugin_cloudrank.git` 克隆仓库到本地。
 2.  **放置插件文件**:
