@@ -50,9 +50,9 @@ AstrBot 词云与排名插件是一款为 AstrBot 设计的强大工具，能够
 2.  **放置插件文件**:
     *   解压下载的压缩包。
     *   将整个插件文件夹 ( `CloudRank`) 复制到 AstrBot 的插件目录: `AstrBot/data/plugins/`。
-    *   最终路径应为 `AstrBot/data/plugins/wordcloud/`。
+    *   最终路径应为 `AstrBot/data/plugins/cloudrank/`。
 3.  **安装依赖**:
-    *   打开终端或命令行，进入插件目录: `cd AstrBot/data/plugins/wordcloud/`。
+    *   打开终端或命令行，进入插件目录: `cd AstrBot/data/plugins/cloudrank/`。
     *   安装所需的 Python 包: `pip install -r requirements.txt`。
 4.  **重启 AstrBot**:
     *   完全重启 AstrBot 以加载新插件。
@@ -76,7 +76,7 @@ AstrBot 词云与排名插件是一款为 AstrBot 设计的强大工具，能够
 | `min_word_length`       | `int`   | 参与词频统计的最小词语长度。                                                 | `2`                | 小于此长度的词语（通常是单个字或无意义的短词）将被忽略。                                                                                              |
 | `background_color`      | `string`| 词云图片的背景颜色。                                                       | `white`            | 可以是颜色名称 (如 `white`, `black`, `lightyellow`) 或十六进制颜色代码 (如 `#FFFFFF`, `#000000`, `#FFFFE0`)。直接影响图片的底色。                               |
 | `colormap`              | `string`| 词云的配色方案，决定词语的颜色。                                             | `viridis`          | 这是一个预设的颜色映射表名称。不同的 Colormap 会给词云带来完全不同的视觉风格。可选值包括: `viridis`, `plasma`, `inferno`, `magma`, `cividis`, `rainbow`, `jet`, `turbo`, `cool`, `hot` 等 (具体可用列表取决于底层的 `matplotlib` 库)。 |
-| `font_path`             | `string`| 自定义字体文件的路径。                                                     | `""` (空字符串)      | 如果留空，插件会尝试使用内置的默认字体 (通常是 `LXGWWenKai-Regular.ttf`霞鹜文楷) 或系统字体。指定一个 `.ttf` 或 `.otf` 字体文件的完整路径或相对于插件`resources/fonts/`目录的路径，可以解决特定语言字符显示问题，或实现特定的艺术效果。例如: `C:/Windows/Fonts/simsun.ttc` 或 `my_custom_font.ttf` (需将字体放于 `data/plugins/wordcloud/resources/fonts/` 目录)。 |
+| `font_path`             | `string`| 自定义字体文件的路径。                                                     | `""` (空字符串)      | 如果留空，插件会尝试使用内置的默认字体 (通常是 `LXGWWenKai-Regular.ttf`霞鹜文楷) 或系统字体。指定一个 `.ttf` 或 `.otf` 字体文件的完整路径或相对于插件`resources/fonts/`目录的路径，可以解决特定语言字符显示问题，或实现特定的艺术效果。例如: `C:/Windows/Fonts/simsun.ttc` 或 `my_custom_font.ttf` (需将字体放于 `data/plugins/cloudrank/resources/fonts/` 目录)。 |
 | `stop_words_file`       | `string`| 停用词文件的路径。                                                       | `stop_words.txt`   | 指定一个文本文件，每行包含一个要忽略的词语。路径相对于插件 `resources/` 目录。如果留空，将使用插件内置的默认停用词列表。用户可以编辑此文件添加不想出现在词云中的词。                       |
 | `shape`                 | `string`| 词云的整体形状。                                                         | `circle`           | 目前支持 `circle` (圆形) 和 `rectangle` (矩形)。未来可能支持自定义图片蒙版。                                                                        |
 | `show_user_ranking`     | `bool`  | 是否在每日词云中显示用户活跃度排行                                        | `true`             | `true` 时，词云生成后会同时显示当天发言最活跃的用户排行榜，包含发言人数统计和贡献度排名。                                                           |
@@ -128,7 +128,7 @@ cloudrank/
 
 ## ⚙️ 高级说明与定制
 
-*   **自定义停用词**: 编辑位于插件数据目录 `resources/stop_words.txt` (实际路径可能为 `AstrBot/data/plugins/wordcloud/resources/stop_words.txt` 或由 `StarTools.get_data_dir` 决定的路径) 的文件，每行添加一个不想出现在词云中的词。
+*   **自定义停用词**: 编辑位于插件数据目录 `resources/stop_words.txt` (实际路径可能为 `AstrBot/data/plugins/cloudrank/resources/stop_words.txt` 或由 `StarTools.get_data_dir` 决定的路径) 的文件，每行添加一个不想出现在词云中的词。
 *   **自定义字体**: 将字体文件 (如 `.ttf`, `.otf`) 放入插件数据目录 `resources/fonts/` 下，然后在插件配置中将 `font_path` 设置为该字体文件的名称 (例如 `my_font.ttf`)。如果字体在系统其他位置，可以设置绝对路径。
 *   **词云形状蒙版 (Masking)**: (当前版本可能不支持) 虽然配置文件中有 `shape` 选项，但更高级的基于图像的蒙版功能可能需要修改 `wordcloud_core/generator.py` 中的代码，使用 `wordcloud` 库的 `mask` 参数，并提供一个合适的图像作为蒙版。
 
