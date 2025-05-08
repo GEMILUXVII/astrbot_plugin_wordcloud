@@ -30,7 +30,7 @@ import sys
 import importlib
 from . import constant as constant_module
 
-@register(PLUGIN_NAME, PLUGIN_AUTHOR, PLUGIN_DESC, PLUGIN_VERSION, PLUGIN_REPO)
+@register("CloudRank", "GEMILUXVII", "词云与排名插件 (CloudRank) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。", "1.1.1", "https://github.com/GEMILUXVII/astrbot_plugin_cloudrank")
 class WordCloudPlugin(Star):
     """AstrBot 词云生成插件"""
     
@@ -142,10 +142,6 @@ class WordCloudPlugin(Star):
             platform_name = parts[0]
             group_id_val = parts[1]
             if platform_name and group_id_val:
-                # 使用正确的消息类型 "GroupMessage"
-                # 根据用户提供的正确格式 "aiocqhttp:GroupMessage:2768663874_142443871"
-                # 这里 2768663874 是发送者QQ，142443871 是群号
-                # 但由于我们没有发送者QQ，临时使用 "0" 作为占位符
                 return f"{platform_name}:GroupMessage:0_{group_id_val}"
         
         logger.warning(f"无法将内部 session ID '{internal_db_session_id}' 转换为 AstrBot 发送格式。将按原样使用。")
