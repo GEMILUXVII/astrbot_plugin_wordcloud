@@ -460,7 +460,7 @@ class WordCloudPlugin(Star):
             # 提取文本内容
             if content is None or content.strip() == "":
                 # 输出详细日志，标记无文本内容
-                logger.info(f"收到{msg_type}消息 - 会话ID: {session_id}, 发送者: {sender_name}({sender_id}), 内容: {message_desc}")
+                logger.debug(f"收到{msg_type}消息 - 会话ID: {session_id}, 发送者: {sender_name}({sender_id}), 内容: {message_desc}")
                 
                 # 将消息内容设为特殊标记，以便history_manager能识别出这是特殊消息
                 if not hasattr(event, 'message_str') or event.message_str is None:
@@ -479,11 +479,11 @@ class WordCloudPlugin(Star):
                 return True  # 空消息直接跳过，不记录也不报错
             
             # 输出详细日志
-            logger.info(f"收到{msg_type}消息 - 会话ID: {session_id}, 发送者: {sender_name}({sender_id}), 内容: {content[:30]}{'...' if len(content) > 30 else ''}")
+            logger.debug(f"收到{msg_type}消息 - 会话ID: {session_id}, 发送者: {sender_name}({sender_id}), 内容: {content[:30]}{'...' if len(content) > 30 else ''}")
             
             # 确保消息内容长度合理
             if len(content) > 1000:  # 防止过长的消息
-                logger.warning(f"消息内容过长({len(content)}字符)，截断至1000字符")
+                logger.debug(f"消息内容过长({len(content)}字符)，截断至1000字符")
                 content = content[:1000] + "..."
             
             # 更新消息内容
