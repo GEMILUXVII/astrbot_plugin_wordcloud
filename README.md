@@ -1,13 +1,11 @@
 # <div align="center">📊 AstrBot 词云与排名插件 (CloudRank)</div>
 
-<p align="center">
+<div align="center">
   <img src="https://img.shields.io/badge/version-v1.1.0-blueviolet?style=flat-square" alt="Version">
-  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/GEMILUXVII/astrbot_plugin_cloudrank?color=blue&style=flat-square" alt="License">
-  </a>
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
-</p>
+</div>
 
 ## 📝 介绍
 
