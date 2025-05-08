@@ -1,4 +1,4 @@
-# <div align="center">📊 AstrBot 词云与排名插件 (CloudRank)</div>
+# <div align="center">📊 CloudRank </div>
 
 <div align="center">
   <img src="https://img.shields.io/badge/version-v1.1.0-blueviolet?style=flat-square" alt="Version">
