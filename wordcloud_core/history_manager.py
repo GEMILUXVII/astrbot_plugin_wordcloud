@@ -131,13 +131,24 @@ class HistoryManager:
             是否保存成功
         """
         try:
-            session_id = event.unified_msg_origin
+            # session_id = event.unified_msg_origin # 旧的获取方式
             sender_id = event.get_sender_id()
             sender_name = event.get_sender_name()
             message = event.message_str if hasattr(event, 'message_str') else None
             timestamp = get_current_timestamp()
-            is_group = bool(event.get_group_id())
             
+            group_id_val = event.get_group_id()
+            is_group = bool(group_id_val)
+            
+            session_id_to_save: str
+            if group_id_val:  # 是群聊消息
+                platform_name = event.get_platform_name()
+                if not platform_name: # 做个兜底，万一平台名获取不到
+                    platform_name = "unknown_platform" 
+                session_id_to_save = f"{platform_name}_group_{group_id_val}"
+            else:  # 非群聊消息（例如私聊）
+                session_id_to_save = event.unified_msg_origin
+
             # 增强空消息检测逻辑
             if message is None:
                 # 尝试从其他来源获取消息内容
@@ -162,7 +173,7 @@ class HistoryManager:
                     logger.debug(f"尝试提取消息内容失败: {e}")
                 
                 if not message:
-                    logger.debug(f"跳过None消息: 会话ID={session_id}, 发送者={sender_name}")
+                    logger.debug(f"跳过None消息: 会话ID={session_id_to_save}, 发送者={sender_name}")
                     return False
             
             # 确保message是字符串
@@ -178,11 +189,11 @@ class HistoryManager:
             
             # 过滤空消息
             if not message:
-                logger.debug(f"跳过空消息: 会话ID={session_id}, 发送者={sender_name}")
+                logger.debug(f"跳过空消息: 会话ID={session_id_to_save}, 发送者={sender_name}")
                 return False
             
             # 日志详细记录收到的消息
-            logger.debug(f"准备保存消息: 会话ID={session_id}, 发送者={sender_name}, 内容前30字符: {message[:30]}...")
+            logger.debug(f"准备保存消息: 会话ID={session_id_to_save}, 发送者={sender_name}, 内容前30字符: {message[:30]}...")
             
             # 插入数据
             insert_sql = """
@@ -190,7 +201,7 @@ class HistoryManager:
             (session_id, sender_id, sender_name, message, timestamp, is_group)
             VALUES (?, ?, ?, ?, ?, ?)
             """
-            params = (session_id, sender_id, sender_name, message, timestamp, is_group)
+            params = (session_id_to_save, sender_id, sender_name, message, timestamp, is_group)
             
             # 使用_get_db_cursor获取游标并执行
             try:
@@ -198,7 +209,7 @@ class HistoryManager:
                 cursor.execute(insert_sql, params)
                 cursor.connection.commit()
                 cursor.close()
-                logger.debug(f"消息保存成功 - 会话ID: {session_id}, 时间戳: {timestamp}")
+                logger.debug(f"消息保存成功 - 会话ID: {session_id_to_save}, 时间戳: {timestamp}")
                 return True
             except Exception as db_error:
                 logger.error(f"数据库操作失败: {db_error}")
@@ -510,6 +521,45 @@ class HistoryManager:
             logger.error(f"获取今天的消息数量失败: {e}")
             return 0
             
+    def get_message_count_for_days(self, session_id: str, days: int) -> int:
+        """
+        获取指定会话在过去N天内的总消息数量。
+        
+        Args:
+            session_id: 会话ID
+            days: 获取最近几天的消息
+            
+        Returns:
+            指定天数内的消息总数量
+        """
+        try:
+            # 计算起始时间戳
+            current_time = get_current_timestamp()
+            start_time = current_time - (days * 24 * 60 * 60)
+            
+            # 查询数据
+            query_sql = """
+            SELECT COUNT(*) as count
+            FROM wordcloud_message_history
+            WHERE session_id = ? AND timestamp >= ?
+            """
+            
+            # 使用_get_db_cursor获取游标并执行
+            cursor = self._get_db_cursor()
+            cursor.execute(query_sql, (session_id, start_time))
+            
+            # 获取结果
+            result = cursor.fetchone()
+            cursor.close()
+            
+            if result:
+                logger.debug(f"获取到 {days} 天内消息总数: {result[0]} (会话ID: {session_id})")
+                return result[0]
+            return 0
+        except Exception as e:
+            logger.error(f"获取 {days} 天内消息总数失败: {e}, session_id={session_id}")
+            return 0
+    
     def get_active_users(self, session_id: str, days: int = 1, limit: int = 10) -> List[Tuple[str, str, int]]:
         """
         获取指定会话中最活跃的用户（按发言数量排序）
