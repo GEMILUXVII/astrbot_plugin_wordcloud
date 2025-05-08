@@ -205,4 +205,3 @@ CloudRank插件的开发离不开以下项目、工具和社区的支持：
 - [AstrBot](https://github.com/shandianlala/AstrBot) - 提供强大的聊天机器人平台支持
 - [LXGW WenKai](https://github.com/lxgw/LxgwWenKai) - 霞鹜文楷字体项目，提供了美观的开源中文字体
 
-特别感谢所有测试和提供反馈的用户，你们的建议让这个插件变得更好！
