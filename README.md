@@ -232,7 +232,7 @@ CloudRank插件是一款用于 AstrBot 的插件，能够将群聊或私聊中�
   </tr>
   <tr>
     <td><code>/wc force_daily</code></td>
-    <td>(管理员权限) 强制为所有配置了每日词云的会话立即生成一次每日词云。</td>
+    <td>强制为所有配置了每日词云的会话立即生成一次每日词云。(管理员权限) </td>
     <td><code>/wc force_daily</code></td>
   </tr>
 </table>
