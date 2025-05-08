@@ -201,15 +201,48 @@ AstrBot 词云与排名插件是一款为 AstrBot 设计的强大工具，能够
 
 以下是与词云插件交互的主要命令:
 
-| 命令                                  | 别名     | 描述                                                                  | 示例                                     |
-| ------------------------------------- | -------- | --------------------------------------------------------------------- | ---------------------------------------- |
-| `/wordcloud [天数]`                   |          | 生成当前会话 (群聊或私聊) 的词云。可选择指定统计过去多少天的消息。           | `/wordcloud` (使用默认天数) <br> `/wordcloud 3` (最近3天) |
-| `/wc help`                            |          | 显示本插件的帮助信息，包括命令列表。                                          | `/wc help`                               |
-| `/wc test`                            |          | 生成测试词云，无需历史数据。                                                 | `/wc test`                              |
-| `/wc today`                           |          | 手动触发生成当前会话今天的词云。                                                | `/wc today`                              |
-| `/wc enable [群号]`                   |          | 在指定群聊启用词云功能。如果未提供群号，则在当前群聊启用。 (管理员权限)        | `/wc enable 123456789`                   |
-| `/wc disable [群号]`                  |          | 在指定群聊禁用词云功能。如果未提供群号，则在当前群聊禁用。 (管理员权限)        | `/wc disable 123456789`                  |
-| `/wc force_daily`                     |          | (管理员权限) 强制为所有配置了每日词云的会话立即生成一次每日词云。                 | `/wc force_daily`                        |
+<table width="100%">
+  <tr>
+    <th width="30%">命令</th>
+    <th width="40%">描述</th>
+    <th width="30%">示例</th>
+  </tr>
+  <tr>
+    <td><code>/wordcloud [天数]</code></td>
+    <td>生成当前会话 (群聊或私聊) 的词云。可选择指定统计过去多少天的消息。</td>
+    <td><code>/wordcloud</code> (使用默认天数) <br> <code>/wordcloud 3</code> (最近3天)</td>
+  </tr>
+  <tr>
+    <td><code>/wc help</code></td>
+    <td>显示本插件的帮助信息，包括命令列表。</td>
+    <td><code>/wc help</code></td>
+  </tr>
+  <tr>
+    <td><code>/wc test</code></td>
+    <td>生成测试词云，无需历史数据。</td>
+    <td><code>/wc test</code></td>
+  </tr>
+  <tr>
+    <td><code>/wc today</code></td>
+    <td>手动触发生成当前会话今天的词云。</td>
+    <td><code>/wc today</code></td>
+  </tr>
+  <tr>
+    <td><code>/wc enable [群号]</code></td>
+    <td>在指定群聊启用词云功能。如果未提供群号，则在当前群聊启用。 (管理员权限)</td>
+    <td><code>/wc enable 123456789</code></td>
+  </tr>
+  <tr>
+    <td><code>/wc disable [群号]</code></td>
+    <td>在指定群聊禁用词云功能。如果未提供群号，则在当前群聊禁用。 (管理员权限)</td>
+    <td><code>/wc disable 123456789</code></td>
+  </tr>
+  <tr>
+    <td><code>/wc force_daily</code></td>
+    <td>(管理员权限) 强制为所有配置了每日词云的会话立即生成一次每日词云。</td>
+    <td><code>/wc force_daily</code></td>
+  </tr>
+</table>
 
 **注意**:
 *   命令前缀 (`/`) 可能因 AstrBot 的全局配置而有所不同。
