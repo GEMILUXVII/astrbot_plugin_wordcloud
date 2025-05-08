@@ -61,26 +61,141 @@ AstrBot 词云与排名插件是一款为 AstrBot 设计的强大工具，能够
 
 插件的配置通过 `_conf_schema.json` 文件定义，您可以在 AstrBot 后台的插件配置页面进行修改。以下是主要的配置项及其说明：
 
-| 配置项                  | 类型    | 描述                                                                 | 默认值             | 效果说明                                                                                                                               |
-| ----------------------- | ------- | -------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `auto_generate_enabled` | `bool`  | 是否启用自动生成词云功能。                                                 | `true`             | `true` 时，插件会根据 `auto_generate_cron` 的设置定时生成词云。                                                                                  |
-| `auto_generate_cron`    | `string`| 自动生成词云的 CRON 表达式。                                               | `0 20 * * *`       | 标准 CRON 格式 (`分 时 日 月 周`)。例如，默认值表示每天晚上20:00执行。                                                                             |
-| `daily_generate_enabled`| `bool`  | 是否启用每日词云生成功能。                                                 | `true`             | `true` 时，插件会根据 `daily_generate_time` 的设置每日生成词云。                                                                                |
-| `daily_generate_time`   | `string`| 每日词云的生成时间。                                                       | `23:30`            | 格式为 `HH:MM`。例如，`23:30` 表示每天晚上11点30分。                                                                                              |
-| `daily_summary_title`   | `string`| 每日词云图片的标题模板。                                                   | `"{date} {group_name} 今日词云"` | 支持占位符: `{date}` (当前日期), `{group_name}` (群聊名称)。                                                                               |
-| `enabled_group_list`    | `string`| 启用词云功能的群聊列表。                                                   | `""` (空字符串)      | 以英文逗号分隔的群号列表，例如 `123456789,987654321`。如果留空，则表示在所有群聊中都启用词云功能 (除非群聊被单独禁用过)。                                                                  |
-| `history_days`          | `int`   | 手动生成词云时，默认统计的历史消息天数。                                       | `7`                | 当用户使用 `/wordcloud` 命令且未指定天数时，将使用此值。                                                                                             |
-| `max_word_count`        | `int`   | 词云图片中显示的最大词语数量。                                               | `100`              | 控制词云的密集程度和信息量。建议值在 50 到 200 之间。                                                                                              |
-| `min_word_length`       | `int`   | 参与词频统计的最小词语长度。                                                 | `2`                | 小于此长度的词语（通常是单个字或无意义的短词）将被忽略。                                                                                              |
-| `background_color`      | `string`| 词云图片的背景颜色。                                                       | `white`            | 可以是颜色名称 (如 `white`, `black`, `lightyellow`) 或十六进制颜色代码 (如 `#FFFFFF`, `#000000`, `#FFFFE0`)。直接影响图片的底色。                               |
-| `colormap`              | `string`| 词云的配色方案，决定词语的颜色。                                             | `viridis`          | 这是一个预设的颜色映射表名称。不同的 Colormap 会给词云带来完全不同的视觉风格。可选值包括: `viridis`, `plasma`, `inferno`, `magma`, `cividis`, `rainbow`, `jet`, `turbo`, `cool`, `hot` 等 (具体可用列表取决于底层的 `matplotlib` 库)。 |
-| `font_path`             | `string`| 自定义字体文件的路径。                                                     | `""` (空字符串)      | 如果留空，插件会尝试使用内置的默认字体 (通常是 `LXGWWenKai-Regular.ttf`霞鹜文楷) 或系统字体。指定一个 `.ttf` 或 `.otf` 字体文件的完整路径或相对于插件`resources/fonts/`目录的路径，可以解决特定语言字符显示问题，或实现特定的艺术效果。例如: `C:/Windows/Fonts/simsun.ttc` 或 `my_custom_font.ttf` (需将字体放于 `data/plugins/cloudrank/resources/fonts/` 目录)。 |
-| `stop_words_file`       | `string`| 停用词文件的路径。                                                       | `stop_words.txt`   | 指定一个文本文件，每行包含一个要忽略的词语。路径相对于插件 `resources/` 目录。如果留空，将使用插件内置的默认停用词列表。用户可以编辑此文件添加不想出现在词云中的词。                       |
-| `shape`                 | `string`| 词云的整体形状。                                                         | `circle`           | 目前支持 `circle` (圆形) 和 `rectangle` (矩形)。未来可能支持自定义图片蒙版。                                                                        |
-| `show_user_ranking`     | `bool`  | 是否在每日词云中显示用户活跃度排行                                        | `true`             | `true` 时，词云生成后会同时显示当天发言最活跃的用户排行榜，包含发言人数统计和贡献度排名。                                                           |
-| `ranking_user_count`    | `int`   | 用户排行榜显示的人数                                                     | `5`                | 设置排行榜显示前多少名活跃用户，建议设置5-10之间的值，过多可能导致排行榜信息过长。                                                                 |
-| `ranking_medals`        | `string`| 排行榜奖牌表情                                                          | `🥇,🥈,🥉,🏅,🏅`      | 用逗号分隔的表情符号，前三名会使用前三个表情，其余位置使用后续表情。可自定义更改为其他表情。                                                       |
-| `debug_mode`            | `bool`  | 是否启用详细调试日志。                                                     | `false`            | `true` 时，插件会在控制台输出更详细的运行信息，主要用于开发者排查问题。普通用户建议保持 `false`。                                                              |
+<table width="100%">
+  <tr>
+    <th width="15%">配置项</th>
+    <th width="8%">类型</th>
+    <th width="25%">描述</th>
+    <th width="12%">默认值</th>
+    <th width="40%">效果说明</th>
+  </tr>
+  <tr>
+    <td><code>auto_generate_enabled</code></td>
+    <td><code>bool</code></td>
+    <td>是否启用自动生成词云功能</td>
+    <td><code>true</code></td>
+    <td><code>true</code> 时，插件会根据 <code>auto_generate_cron</code> 的设置定时生成词云</td>
+  </tr>
+  <tr>
+    <td><code>auto_generate_cron</code></td>
+    <td><code>string</code></td>
+    <td>自动生成词云的 CRON 表达式</td>
+    <td><code>0 20 * * *</code></td>
+    <td>标准 CRON 格式 (<code>分 时 日 月 周</code>)。例如，默认值表示每天晚上20:00执行</td>
+  </tr>
+  <tr>
+    <td><code>daily_generate_enabled</code></td>
+    <td><code>bool</code></td>
+    <td>是否启用每日词云生成功能</td>
+    <td><code>true</code></td>
+    <td><code>true</code> 时，插件会根据 <code>daily_generate_time</code> 的设置每日生成词云</td>
+  </tr>
+  <tr>
+    <td><code>daily_generate_time</code></td>
+    <td><code>string</code></td>
+    <td>每日词云的生成时间</td>
+    <td><code>23:30</code></td>
+    <td>格式为 <code>HH:MM</code>。例如，<code>23:30</code> 表示每天晚上11点30分</td>
+  </tr>
+  <tr>
+    <td><code>daily_summary_title</code></td>
+    <td><code>string</code></td>
+    <td>每日词云图片的标题模板</td>
+    <td><code>"{date} {group_name} 今日词云"</code></td>
+    <td>支持占位符: <code>{date}</code> (当前日期), <code>{group_name}</code> (群聊名称)</td>
+  </tr>
+  <tr>
+    <td><code>enabled_group_list</code></td>
+    <td><code>string</code></td>
+    <td>启用词云功能的群聊列表</td>
+    <td><code>""</code> (空字符串)</td>
+    <td>以英文逗号分隔的群号列表，例如 <code>123456789,987654321</code>。如果留空，则表示在所有群聊中都启用词云功能 (除非群聊被单独禁用过)</td>
+  </tr>
+  <tr>
+    <td><code>history_days</code></td>
+    <td><code>int</code></td>
+    <td>手动生成词云时，默认统计的历史消息天数</td>
+    <td><code>7</code></td>
+    <td>当用户使用 <code>/wordcloud</code> 命令且未指定天数时，将使用此值</td>
+  </tr>
+  <tr>
+    <td><code>max_word_count</code></td>
+    <td><code>int</code></td>
+    <td>词云图片中显示的最大词语数量</td>
+    <td><code>100</code></td>
+    <td>控制词云的密集程度和信息量。建议值在 50 到 200 之间</td>
+  </tr>
+  <tr>
+    <td><code>min_word_length</code></td>
+    <td><code>int</code></td>
+    <td>参与词频统计的最小词语长度</td>
+    <td><code>2</code></td>
+    <td>小于此长度的词语（通常是单个字或无意义的短词）将被忽略</td>
+  </tr>
+  <tr>
+    <td><code>background_color</code></td>
+    <td><code>string</code></td>
+    <td>词云图片的背景颜色</td>
+    <td><code>white</code></td>
+    <td>可以是颜色名称 (如 <code>white</code>, <code>black</code>, <code>lightyellow</code>) 或十六进制颜色代码 (如 <code>#FFFFFF</code>)</td>
+  </tr>
+  <tr>
+    <td><code>colormap</code></td>
+    <td><code>string</code></td>
+    <td>词云的配色方案，决定词语的颜色</td>
+    <td><code>viridis</code></td>
+    <td>不同的 Colormap 会给词云带来完全不同的视觉风格。可选值包括: <code>viridis</code>, <code>plasma</code>, <code>inferno</code>, <code>rainbow</code>, <code>jet</code> 等</td>
+  </tr>
+  <tr>
+    <td><code>font_path</code></td>
+    <td><code>string</code></td>
+    <td>自定义字体文件的路径</td>
+    <td><code>""</code> (空字符串)</td>
+    <td>如果留空，插件会尝试使用内置的默认字体 (通常是霞鹜文楷) 或系统字体。可指定 <code>.ttf</code> 或 <code>.otf</code> 字体文件</td>
+  </tr>
+  <tr>
+    <td><code>stop_words_file</code></td>
+    <td><code>string</code></td>
+    <td>停用词文件的路径</td>
+    <td><code>stop_words.txt</code></td>
+    <td>指定一个文本文件，每行包含一个要忽略的词语。路径相对于插件 <code>resources/</code> 目录</td>
+  </tr>
+  <tr>
+    <td><code>shape</code></td>
+    <td><code>string</code></td>
+    <td>词云的整体形状</td>
+    <td><code>circle</code></td>
+    <td>目前支持 <code>circle</code> (圆形) 和 <code>rectangle</code> (矩形)。未来可能支持自定义图片蒙版</td>
+  </tr>
+  <tr>
+    <td><code>show_user_ranking</code></td>
+    <td><code>bool</code></td>
+    <td>是否在每日词云中显示用户活跃度排行</td>
+    <td><code>true</code></td>
+    <td><code>true</code> 时，词云生成后会同时显示当天发言最活跃的用户排行榜，包含发言人数统计和贡献度排名</td>
+  </tr>
+  <tr>
+    <td><code>ranking_user_count</code></td>
+    <td><code>int</code></td>
+    <td>用户排行榜显示的人数</td>
+    <td><code>5</code></td>
+    <td>设置排行榜显示前多少名活跃用户，建议设置5-10之间的值，过多可能导致排行榜信息过长</td>
+  </tr>
+  <tr>
+    <td><code>ranking_medals</code></td>
+    <td><code>string</code></td>
+    <td>排行榜奖牌表情</td>
+    <td><code>🥇,🥈,🥉,🏅,🏅</code></td>
+    <td>用逗号分隔的表情符号，前三名会使用前三个表情，其余位置使用后续表情</td>
+  </tr>
+  <tr>
+    <td><code>debug_mode</code></td>
+    <td><code>bool</code></td>
+    <td>是否启用详细调试日志</td>
+    <td><code>false</code></td>
+    <td><code>true</code> 时，插件会在控制台输出更详细的运行信息，主要用于开发者排查问题</td>
+  </tr>
+</table>
 
 ## 💻 使用命令
 
@@ -182,15 +297,10 @@ cloudrank/
 ---
 
 
+## 🙏 致谢
 
+本项目基于或参考了以下开源项目:
 
-## 🙏 项目致谢
-
-CloudRank插件的开发离不开以下项目、工具和社区的支持：
-
-- [WordCloud](https://github.com/amueller/word_cloud) - 优秀的词云生成Python库
-- [Jieba](https://github.com/fxsjy/jieba) - 中文分词工具
-- [Matplotlib](https://matplotlib.org/) - 用于颜色映射和图形处理
 - [AstrBot](https://github.com/shandianlala/AstrBot) - 提供强大的聊天机器人平台支持
 - [LXGW WenKai](https://github.com/lxgw/LxgwWenKai) - 霞鹜文楷字体项目，提供了美观的开源中文字体
 
