@@ -5,6 +5,7 @@
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
+  <img src="https://img.shields.io/badge/updated-2024--05--09-brightgreen?style=flat-square" alt="Last Updated">
 </div>
 
 ## 📝 介绍
