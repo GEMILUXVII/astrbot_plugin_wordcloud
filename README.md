@@ -274,9 +274,8 @@ cloudrank/
 
 ## ⚙️ 高级说明与定制
 
-*   **自定义停用词**: 编辑位于插件数据目录 `resources/stop_words.txt` (实际路径可能为 `AstrBot/data/plugins/cloudrank/resources/stop_words.txt` 或由 `StarTools.get_data_dir` 决定的路径) 的文件，每行添加一个不想出现在词云中的词。
+*   **自定义停用词**: 编辑位于插件数据目录 `resources/stop_words.txt` 的文件，每行添加一个不想出现在词云中的词。
 *   **自定义字体**: 将字体文件 (如 `.ttf`, `.otf`) 放入插件数据目录 `resources/fonts/` 下，然后在插件配置中将 `font_path` 设置为该字体文件的名称 (例如 `my_font.ttf`)。如果字体在系统其他位置，可以设置绝对路径。
-*   **词云形状蒙版 (Masking)**: (当前版本可能不支持) 虽然配置文件中有 `shape` 选项，但更高级的基于图像的蒙版功能可能需要修改 `wordcloud_core/generator.py` 中的代码，使用 `wordcloud` 库的 `mask` 参数，并提供一个合适的图像作为蒙版。
 
 ## ⚠️ 注意事项
 
