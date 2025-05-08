@@ -1,5 +1,5 @@
-name: wordcloud 
-desc: 词云插件(WordCloud)是一个文本可视化工具，能将聊天记录关键词以词云形式展现，支持定时或手动生成。
-version: v1.0.0
+name: cloudrank 
+desc: 词云与排名插件(CloudRank)是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。
+version: v1.1.0
 author: GEMILUXVII
-repo: https://github.com/GEMILUXVII/astrbot_plugin_wordcloud
+repo: https://github.com/GEMILUXVII/astrbot_plugin_cloudrank
