@@ -1,0 +1,96 @@
+{
+    "auto_generate_enabled": {
+        "type": "bool",
+        "description": "是否启用自动生成词云",
+        "hint": "定时执行，根据cron表达式配置的时间生成词云",
+        "default": true
+    },
+    "auto_generate_cron": {
+        "type": "string",
+        "description": "自动生成词云的cron表达式",
+        "hint": "使用标准cron格式（分 时 日 月 周），默认每天晚上8点执行",
+        "default": "0 20 * * *"
+    },
+    "daily_generate_enabled": {
+        "type": "bool",
+        "description": "是否启用每日词云生成",
+        "hint": "每天固定时间生成当天的聊天词云",
+        "default": true
+    },
+    "daily_generate_time": {
+        "type": "string",
+        "description": "每日词云生成时间",
+        "hint": "格式为 HH:MM，如：23:30 表示每天晚上11点30分",
+        "default": "23:30"
+    },
+    "daily_summary_title": {
+        "type": "string",
+        "description": "每日词云标题模板",
+        "hint": "支持变量：{date}=日期，{group_name}=群名称",
+        "default": "{date} {group_name} 今日词云"
+    },
+    "enabled_group_list": {
+        "type": "string",
+        "description": "启用词云功能的群聊列表",
+        "hint": "以逗号分隔的群号列表，如：123456789,987654321。留空表示所有群都启用。",
+        "default": ""
+    },
+    "history_days": {
+        "type": "int",
+        "description": "统计历史消息的天数",
+        "hint": "手动生成词云时默认统计的天数",
+        "default": 7
+    },
+    "max_word_count": {
+        "type": "int",
+        "description": "词云中最大显示词数",
+        "hint": "建议在50-200之间",
+        "default": 100
+    },
+    "min_word_length": {
+        "type": "int",
+        "description": "最小词长度",
+        "hint": "小于此长度的词会被忽略，建议为2",
+        "default": 2
+    },
+    "background_color": {
+        "type": "string",
+        "description": "词云背景颜色",
+        "hint": "可使用颜色名称或十六进制值，如：white、black、#FFFFFF、#000000",
+        "default": "white",
+        "options": ["white", "black", "#F5F5F5", "#333333", "#F0F8FF", "#000080", "#87CEEB"]
+    },
+    "colormap": {
+        "type": "string",
+        "description": "词云配色方案",
+        "hint": "影响词云中词语的颜色",
+        "default": "viridis",
+        "options": ["viridis", "plasma", "inferno", "magma", "cividis", "rainbow", "jet", "turbo", "cool", "hot"]
+    },
+    "font_path": {
+        "type": "string",
+        "description": "字体路径",
+        "hint": "可使用相对路径或绝对路径。留空使用默认字体。",
+        "default": ""
+    },
+    "stop_words_file": {
+        "type": "string",
+        "description": "停用词文件路径",
+        "hint": "可使用相对路径或绝对路径。留空使用默认停用词。",
+        "default": "stop_words.txt"
+    },
+    "shape": {
+        "type": "string",
+        "description": "词云形状",
+        "hint": "决定词云的整体形状",
+        "default": "circle",
+        "options": ["circle", "rectangle"]
+    },
+    "debug_mode": {
+        "type": "bool",
+        "description": "启用详细调试日志",
+        "hint": "开启后会在控制台输出非常详细的调度器和任务执行日志，用于问题排查。请仅在需要时开启。",
+        "default": false,
+        "obvious_hint": false
+    }
+} 
