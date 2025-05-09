@@ -12,6 +12,8 @@ from pathlib import Path
 import numpy as np
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # 使用非交互式后端
 from matplotlib.font_manager import FontProperties
 from PIL import Image, ImageDraw, ImageFont, ImageStat
 from astrbot.api import logger
