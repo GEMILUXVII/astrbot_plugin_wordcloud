@@ -1,7 +1,7 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.1.2-blueviolet?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.2.0-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
@@ -102,7 +102,7 @@ CloudRank插件是一款用于 AstrBot 的插件，能够将群聊或私聊中�
     <td><code>string</code></td>
     <td>启用词云功能的群聊列表</td>
     <td><code>""</code> (空字符串)</td>
-    <td>以英文逗号分隔的群号列表，例如 <code>123456789,987654321</code>。如果留空，则表示在所有群聊中都启用词云功能 (除非群聊被单独禁用过)</td>
+    <td>以英文逗号分隔的群号列表，例如 <code>123456789,987654321</code>。仅在此处填写的群号才会启用词云功能。如果留空，则默认所有群聊都不启用词云功能。</td>
   </tr>
   <tr>
     <td><code>history_days</code></td>
@@ -300,7 +300,14 @@ cloudrank/
 *   **词云颜色不喜欢**:
     *   **解决**: 修改配置项 `background_color` 设置背景色，修改 `colormap` 选择不同的词语配色方案。
 
-## 📋 迭代日志
+## 🔄 更新日志 (Changelog)
+
+### v1.2.0
+
+- ⚠️ **行为变更**: 修改了 `enabled_group_list` 配置项的群聊启用逻辑。现在，如果此配置为空，则默认对所有群聊禁用词云功能。只有在列表中明确指定的群号才会启用词云。此前的行为是留空表示所有群聊均启用。相应更新了配置文件提示和文档说明。
+
+### v1.1.2
+- 🔧 **修复**: 解决了在非主线程（如定时任务）中生成词云时，因 Matplotlib 图形后端导致的 `RuntimeError: main thread is not in main loop` 错误。已显式设置 Matplotlib 后端为 'Agg'，以确保线程安全的图像生成。
 
 ### v1.1.1
 - 🔧 修复会话ID处理逻辑：
