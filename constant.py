@@ -9,7 +9,7 @@ from pathlib import Path
 PLUGIN_NAME = "cloudrank"
 PLUGIN_AUTHOR = "GEMILUXVII"
 PLUGIN_DESC = "词云与排名插件 (CloudRank) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。"
-PLUGIN_VERSION = "1.2.0"
+PLUGIN_VERSION = "1.2.1"
 PLUGIN_REPO = "https://github.com/GEMILUXVII/astrbot_plugin_cloudrank"
 
 # 路径常量
@@ -33,6 +33,14 @@ CMD_GENERATE = "wordcloud"
 CMD_GROUP = "wc"
 CMD_CONFIG = "config"
 CMD_HELP = "help"
+
+# 自然语言关键词 - 用于触发命令的关键词
+# 格式: {"command": ["关键词1", "关键词2", ...]}
+NATURAL_KEYWORDS = {
+    "today": ["今日词云", "获取今日词云", "查看今日词云", "生成今日词云"],
+    "wordcloud": ["生成词云", "查看词云", "最近词云", "历史词云"],
+    "help": ["词云帮助", "词云功能", "词云说明", "词云指令"],
+}
 
 # 默认停用词列表
 DEFAULT_STOPWORDS = [

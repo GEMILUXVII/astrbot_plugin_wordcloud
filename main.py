@@ -24,6 +24,7 @@ from .constant import (
     CMD_GROUP,
     CMD_CONFIG,
     CMD_HELP,
+    NATURAL_KEYWORDS,
 )
 from .utils import (
     load_stop_words,
@@ -49,7 +50,7 @@ from . import constant as constant_module
     "CloudRank",
     "GEMILUXVII",
     "词云与排名插件 (CloudRank) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。",
-    "1.2.0",
+    "1.2.1",
     "https://github.com/GEMILUXVII/astrbot_plugin_cloudrank",
 )
 class WordCloudPlugin(Star):
@@ -518,6 +519,14 @@ class WordCloudPlugin(Star):
             if event.get_sender_id() == event.get_self_id():
                 return
 
+            # 尝试匹配自然语言关键词
+            if event.message_str is not None:
+                # 检查是否触发了自然语言命令
+                handled = await self._check_natural_language_keywords(event)
+                if handled:
+                    # 如果已经处理了命令，就不需要继续记录消息
+                    return True
+
             # 获取消息详情，用于日志
             sender_id = event.get_sender_id()
             sender_name = event.get_sender_name()
@@ -772,6 +781,12 @@ class WordCloudPlugin(Star):
             f"8. /wc disable [群号] - 为指定群禁用词云功能",
             f"9. /wc clean_config - 清理过时的配置项",
             f"10. /wc force_daily - 强制执行每日词云生成（管理员）",
+            f"",
+            f"【自然语言关键词】",
+            f"除了上述命令外，您还可以直接使用以下关键词触发相应功能：",
+            f"- 「今日词云」「获取今日词云」等 - 生成今天的词云",
+            f"- 「生成词云」「查看词云」等 - 生成最近7天的词云",
+            f"- 「词云帮助」「词云功能」等 - 显示帮助信息",
         ]
 
         yield event.plain_result("\n".join(help_text))
@@ -1651,3 +1666,83 @@ class WordCloudPlugin(Star):
             self.scheduler.stop()
 
         logger.info("WordCloud插件已终止")
+
+    async def _check_natural_language_keywords(self, event: AstrMessageEvent):
+        """
+        检查消息是否匹配自然语言关键词，如果匹配则执行相应命令
+        
+        Args:
+            event: 消息事件
+            
+        Returns:
+            bool: 如果处理了关键词命令返回True，否则返回False
+        """
+        if not event.message_str:
+            return False
+        
+        message = event.message_str.strip()
+        
+        # 检查是否匹配任何自然语言关键词
+        for command, keywords in NATURAL_KEYWORDS.items():
+            for keyword in keywords:
+                if message == keyword:
+                    logger.info(f"检测到自然语言关键词: {keyword}, 执行命令: {command}")
+                    
+                    try:
+                        # 根据命令执行相应的函数
+                        if command == "today":
+                            # 调用today命令函数，但不使用send方法，而是直接处理返回结果
+                            async for result in self.today_command(event):
+                                if hasattr(result, 'send') and callable(getattr(result, 'send')):
+                                    await result.send()
+                                else:
+                                    # 使用context发送消息
+                                    sendable_session_id = self._get_astrbot_sendable_session_id(event.unified_msg_origin)
+                                    if isinstance(result, MessageChain):
+                                        await self.context.send_message(sendable_session_id, result)
+                                    elif hasattr(result, 'to_message_chain'):
+                                        message_chain = result.to_message_chain()
+                                        await self.context.send_message(sendable_session_id, message_chain)
+                            return True
+                        
+                        elif command == "wordcloud":
+                            # 调用生成词云命令，默认使用7天
+                            days = self.config.get("history_days", 7)
+                            async for result in self.generate_wordcloud_command(event, days):
+                                if hasattr(result, 'send') and callable(getattr(result, 'send')):
+                                    await result.send()
+                                else:
+                                    # 使用context发送消息
+                                    sendable_session_id = self._get_astrbot_sendable_session_id(event.unified_msg_origin)
+                                    if isinstance(result, MessageChain):
+                                        await self.context.send_message(sendable_session_id, result)
+                                    elif hasattr(result, 'to_message_chain'):
+                                        message_chain = result.to_message_chain()
+                                        await self.context.send_message(sendable_session_id, message_chain)
+                            return True
+                        
+                        elif command == "help":
+                            # 调用帮助命令
+                            async for result in self.help_command(event):
+                                if hasattr(result, 'send') and callable(getattr(result, 'send')):
+                                    await result.send()
+                                else:
+                                    # 使用context发送消息
+                                    sendable_session_id = self._get_astrbot_sendable_session_id(event.unified_msg_origin)
+                                    if isinstance(result, MessageChain):
+                                        await self.context.send_message(sendable_session_id, result)
+                                    elif hasattr(result, 'to_message_chain'):
+                                        message_chain = result.to_message_chain()
+                                        await self.context.send_message(sendable_session_id, message_chain)
+                            return True
+                    except Exception as e:
+                        logger.error(f"执行自然语言命令 {command} 失败: {e}")
+                        # 尝试发送错误消息
+                        try:
+                            sendable_session_id = self._get_astrbot_sendable_session_id(event.unified_msg_origin)
+                            await self.context.send_message(sendable_session_id, f"执行命令失败: {str(e)}")
+                        except Exception as send_error:
+                            logger.error(f"发送错误消息失败: {send_error}")
+                    return True
+                    
+        return False
