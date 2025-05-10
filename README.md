@@ -1,7 +1,7 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.2.0-blueviolet?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.2.1-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
@@ -237,13 +237,54 @@ CloudRank插件是一款用于 AstrBot 的插件，能够将群聊或私聊中�
   </tr>
 </table>
 
-**注意**:
-*   命令前缀 (`/`) 可能因 AstrBot 的全局配置而有所不同。
-*   部分命令可能需要管理员权限。
+## 🗣️ 自然语言关键词
+
+除了上述命令外，您还可以使用以下自然语言关键词触发相应功能：
+
+<table width="100%">
+  <tr>
+    <th width="25%">关键词</th>
+    <th width="40%">功能描述</th>
+    <th width="35%">等效命令</th>
+  </tr>
+  <tr>
+    <td>今日词云<br>获取今日词云<br>查看今日词云<br>生成今日词云</td>
+    <td>生成当前会话今天的词云图</td>
+    <td><code>/wc today</code></td>
+  </tr>
+  <tr>
+    <td>生成词云<br>查看词云<br>最近词云<br>历史词云</td>
+    <td>生成最近7天（或配置的默认天数）的词云图</td>
+    <td><code>/wordcloud</code></td>
+  </tr>
+  <tr>
+    <td>词云帮助<br>词云功能<br>词云说明<br>词云指令</td>
+    <td>显示词云插件的帮助信息</td>
+    <td><code>/wc help</code></td>
+  </tr>
+</table>
+
+> **提示**：使用自然语言关键词可以更方便地触发功能，无需记忆复杂的命令格式。
+
+### 自定义关键词
+
+如果您想添加或修改触发关键词，可以编辑 `constant.py` 文件中的 `NATURAL_KEYWORDS` 字典：
+
+```python
+# 自然语言关键词 - 用于触发命令的关键词
+# 格式: {"command": ["关键词1", "关键词2", ...]}
+NATURAL_KEYWORDS = {
+    "today": ["今日词云", "获取今日词云", "查看今日词云", "生成今日词云"],
+    "wordcloud": ["生成词云", "查看词云", "最近词云", "历史词云"],
+    "help": ["词云帮助", "词云功能", "词云说明", "词云指令"],
+}
+```
+
+您可以根据需要添加新的命令和关键词，或者为现有命令添加更多关键词。修改后重启机器人即可生效。
 
 ## 🖼️ 词云样例
 
-![Image](https://private-user-images.githubusercontent.com/105118781/442058170-77c9dd9d-d07d-473c-b1b5-a778fe531459.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDY3ODE1MTcsIm5iZiI6MTc0Njc4MTIxNywicGF0aCI6Ii8xMDUxMTg3ODEvNDQyMDU4MTcwLTc3YzlkZDlkLWQwN2QtNDczYy1iMWI1LWE3NzhmZTUzMTQ1OS5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUwNTA5JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MDUwOVQwOTAwMTdaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT01ODE3NTFmYzkzNDk5ZGQ2NWM2NTUwOTVjMTI2NGE0OWNmNjNhNDU5MjhjNTVlZGVjNDgzMDljNzMyNDhiMDQ0JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9._Yp9f21zNOVgnWI2XTZlbZOfKBJVQeoKVrbBMilAxg8)
+![Image](https://i.ibb.co/CKG5XPnC/wc-test.png)
 
 ## 📁 项目结构 (简化)
 
@@ -252,29 +293,40 @@ cloudrank/
 ├── wordcloud_core/           # 核心词云生成与管理逻辑
 │   ├── generator.py          # 词云图像生成器
 │   ├── history_manager.py    # 聊天历史记录管理
-│   └── scheduler.py          # 定时任务调度器
-├── resources/                # 存放字体、默认停用词等资源
-│   ├── fonts/                # 字体文件目录
-│   └── stop_words.txt        # 默认停用词列表
+│   ├── scheduler.py          # 定时任务调度器
+│   └── __init__.py           # 包初始化文件
+├── fonts/                    # 字体文件目录
 ├── _conf_schema.json         # 插件配置文件结构定义
 ├── main.py                   # 插件主逻辑 (Star 类定义)
-├── constant.py               # 插件内部常量
+├── constant.py               # 插件内部常量和自然语言关键词配置
 ├── utils.py                  # 工具函数
+├── stop_words.txt            # 默认停用词列表
 ├── requirements.txt          # Python 依赖包列表
 ├── metadata.yaml             # 插件元数据 (供 AstrBot 识别)
+├── LICENSE                   # 开源许可证
 └── README.md                 # 本说明文档
+```
+
+数据目录结构 (通过StarTools.get_data_dir动态创建):
+```
+AstrBot/data/plugin_data/cloudrank/
+├── resources/                # 资源文件目录
+│   ├── fonts/                # 字体文件目录（存放LXGWWenKai-Regular.ttf等字体）
+│   └── stop_words.txt        # 自定义停用词列表
+├── images/                   # 生成的词云图片缓存目录
+└── debug/                    # 调试信息目录（仅在排查问题时使用）
 ```
 
 ## ⚙️ 高级说明与定制
 
-*   **自定义停用词**: 编辑位于插件数据目录 `resources/stop_words.txt` 的文件，每行添加一个不想出现在词云中的词。
-*   **自定义字体**: 将字体文件 (如 `.ttf`, `.otf`) 放入插件数据目录 `resources/fonts/` 下，然后在插件配置中将 `font_path` 设置为该字体文件的名称 (例如 `my_font.ttf`)。如果字体在系统其他位置，可以设置绝对路径。
+*   **自定义停用词**: 编辑位于数据目录的 `resources/stop_words.txt` 文件，每行添加一个不想出现在词云中的词。
+*   **自定义字体**: 将字体文件 (如 `.ttf`, `.otf`) 放入数据目录 `resources/fonts/` 下，然后在插件配置中将 `font_path` 设置为该字体文件的名称 (例如 `my_font.ttf`)。如果字体在系统其他位置，可以设置绝对路径。
 
 ## ⚠️ 注意事项
 
 *   **首次使用**: 首次生成词云或插件加载时，可能需要一些时间来初始化分词库 (如 `jieba`) 和其他资源。
 *   **中文字体**: 为确保中文在词云中正确显示，建议在配置中明确指定一个包含中文字符的字体路径 (`font_path`)。插件会尝试使用内置的霞鹜文楷字体，如果加载失败或需要特定字体，则此配置项非常重要。
-*   **资源存储**: 插件会在 AstrBot 的数据目录 (通常是 `AstrBot/data/plugins/cloudrank/` 或由 `StarTools.get_data_dir(PLUGIN_NAME)` 返回的路径) 下存储字体、停用词、生成的图片缓存。请确保 AstrBot 运行的用户对此目录有读写权限，并有足够的存储空间。
+*   **资源存储**: 插件会在 AstrBot 的数据目录 (通常是 `AstrBot/data/plugin_data/cloudrank/` 或由 `StarTools.get_data_dir(PLUGIN_NAME)` 返回的路径) 下存储字体、停用词和生成的图片缓存。此目录包含三个主要子目录：`resources/`（存放字体和停用词）、`images/`（存放生成的词云图片）和`debug/`（存放调试信息）。请确保 AstrBot 运行的用户对此目录有读写权限，并有足够的存储空间。
 *   **消息数据存储与 session_id 标准化**: 
     *   本插件的消息历史记录存储在 **AstrBot 核心的中央 SQLite 数据库**中 (通常是 `AstrBot/data/data_v3.db` 或类似路径)，具体表名为 `wordcloud_message_history`。插件本身不在其独立的插件数据目录下创建数据库文件。
     *   这一更改意味着，更新插件后，新记录的群聊消息将使用此标准ID。旧的群聊消息如果之前是按其他 `session_id` 格式存储的，可能不会被包含在更新后的群聊词云查询中，除非进行数据迁移。查看或备份消息数据需要访问 AstrBot 的主数据库。
@@ -296,14 +348,22 @@ cloudrank/
     *   **原因**: CRON 表达式配置错误、AstrBot 或插件在此期间未运行、或任务调度器出现问题。
     *   **解决**: 检查 `auto_generate_cron` 和 `daily_generate_time` 的配置格式是否正确。确保 AstrBot 持续运行。查看日志中与 `TaskScheduler` 或词云生成相关的错误。
 *   **如何添加更多停用词**:
-    *   **解决**: 找到插件的 `stop_words.txt` 文件 (通常在插件的 `resources` 目录下或数据存储目录中)，直接编辑该文件，每行添加一个词。
+    *   **解决**: 找到插件的数据目录下的 `resources/stop_words.txt` 文件，直接编辑该文件，每行添加一个词。
 *   **词云颜色不喜欢**:
     *   **解决**: 修改配置项 `background_color` 设置背景色，修改 `colormap` 选择不同的词语配色方案。
+*   **自然语言关键词没有触发**:
+    *   **原因**: 关键词未正确配置、关键词大小写或空格不匹配、或消息被识别为命令。
+    *   **解决**: 确保消息格式完全匹配 `constant.py` 中定义的关键词，包括空格和标点符号。确保消息不以 `/` 开头，否则会被视为命令而非普通消息。
 
 ## 🔄 更新日志 (Changelog)
 
-### v1.2.0
+### v1.2.1
+- 🔄 更新自然语言关键词：
+  - 优化了关键词处理逻辑，提高了自然语言命令的稳定性
+- 📝 文档：
+  - 添加更多使用说明
 
+### v1.2.0
 - ⚠️ **行为变更**: 修改了 `enabled_group_list` 配置项的群聊启用逻辑。现在，如果此配置为空，则默认对所有群聊禁用词云功能。只有在列表中明确指定的群号才会启用词云。此前的行为是留空表示所有群聊均启用。相应更新了配置文件提示和文档说明。
 
 ### v1.1.2
