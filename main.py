@@ -55,7 +55,7 @@ from . import constant as constant_module
     "CloudRank",
     "GEMILUXVII",
     "词云与排名插件 (CloudRank) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。",
-    "1.3.0",
+    "1.3.1",
     "https://github.com/GEMILUXVII/astrbot_plugin_cloudrank",
 )
 class WordCloudPlugin(Star):
@@ -64,6 +64,9 @@ class WordCloudPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig = None):
         super().__init__(context)
         self.config = config
+        
+        # 添加初始化标志
+        self._initialized = False
 
         logger.info("正在初始化词云插件...")
 
@@ -71,12 +74,18 @@ class WordCloudPlugin(Star):
         self.debug_mode = self.config.get("debug_mode", False)
         if self.debug_mode:
             logger.warning("WordCloud插件调试模式已启用，将输出详细日志。")
+            # 确保DEBUG级别的日志能够显示
+            try:
+                import logging
+                logger.setLevel(logging.DEBUG)
+            except Exception as e:
+                logger.warning(f"设置日志级别失败: {e}")
         # -----------------------
 
         # --- 获取主事件循环 ---
         try:
             self.main_loop = asyncio.get_running_loop()
-            logger.info(
+            logger.debug(
                 f"WordCloudPlugin: Successfully got running main loop ID: {id(self.main_loop)}"
             )
         except RuntimeError:
@@ -84,7 +93,7 @@ class WordCloudPlugin(Star):
                 "WordCloudPlugin: No running loop found via get_running_loop(), trying get_event_loop()."
             )
             self.main_loop = asyncio.get_event_loop()
-            logger.info(
+            logger.debug(
                 f"WordCloudPlugin: Got loop via get_event_loop() ID: {id(self.main_loop)}"
             )
         # ---------------------
@@ -138,14 +147,14 @@ class WordCloudPlugin(Star):
 
         # 现在可以初始化历史记录管理器
         self.history_manager = HistoryManager(context)
-        logger.info("历史记录管理器初始化完成")
+        logger.debug("历史记录管理器初始化完成")
 
         # --- 将主循环和调试模式传递给 Scheduler ---
         self.scheduler = TaskScheduler(
             context, main_loop=self.main_loop, debug_mode=self.debug_mode
         )
         # -----------------------------------------
-        logger.info("任务调度器初始化完成")
+        logger.debug("任务调度器初始化完成")
 
         # 初始化词云生成器变量，确保不为None
         self.wordcloud_generator = None
@@ -226,7 +235,7 @@ class WordCloudPlugin(Star):
                 import shutil
 
                 shutil.copy(plugin_font_path, data_font_path)
-                logger.info(f"已复制字体文件到数据目录: {data_font_path}")
+                logger.debug(f"已复制字体文件到数据目录: {data_font_path}")
 
             # 复制停用词文件
             plugin_stopwords_path = constant_module.PLUGIN_DIR / "stop_words.txt"
@@ -236,7 +245,7 @@ class WordCloudPlugin(Star):
                 import shutil
 
                 shutil.copy(plugin_stopwords_path, data_stopwords_path)
-                logger.info(f"已复制停用词文件到数据目录: {data_stopwords_path}")
+                logger.debug(f"已复制停用词文件到数据目录: {data_stopwords_path}")
 
             # 如果字体文件和停用词文件都不存在，创建基本的文件确保插件仍能工作
             if not data_font_path.exists() and not plugin_font_path.exists():
@@ -246,7 +255,7 @@ class WordCloudPlugin(Star):
                 # 创建一个基本的停用词文件
                 with open(data_stopwords_path, "w", encoding="utf-8") as f:
                     f.write("的\n了\n我\n你\n在\n是\n有\n和\n就\n不")
-                logger.info(f"已创建基本停用词文件: {data_stopwords_path}")
+                logger.debug(f"已创建基本停用词文件: {data_stopwords_path}")
 
         except Exception as e:
             logger.error(f"准备资源文件时出错: {e}")
@@ -259,9 +268,9 @@ class WordCloudPlugin(Star):
             enabled_groups_str = self.config.get("enabled_group_list", "")
             self.enabled_groups = parse_group_list(enabled_groups_str)
 
-            logger.info(f"词云功能已启用的群数量: {len(self.enabled_groups)}")
+            logger.debug(f"词云功能已启用的群数量: {len(self.enabled_groups)}")
             if not self.enabled_groups:
-                logger.info("未指定启用群列表，所有群都会启用词云功能")
+                logger.debug("未指定启用群列表，所有群都会启用词云功能")
         except Exception as e:
             logger.error(f"加载群聊配置失败: {e}")
             # 设置为空集合，表示默认全部启用
@@ -269,6 +278,11 @@ class WordCloudPlugin(Star):
 
     async def initialize(self):
         """初始化插件"""
+        # 防止重复初始化
+        if self._initialized:
+            logger.debug("WordCloud插件已经初始化过，跳过重复初始化")
+            return
+            
         try:
             # 如果之前初始化失败，再次尝试初始化词云生成器
             if self.wordcloud_generator is None:
@@ -276,8 +290,8 @@ class WordCloudPlugin(Star):
                 # 初始化词云生成器
                 self._init_wordcloud_generator()
 
-            logger.info("设置定时任务...")
-            # 设置并启动定时任务
+            logger.debug("设置定时任务...")
+            # 设置定时任务，但不重复启动调度器
             self._setup_scheduled_tasks()
 
             # 输出状态信息
@@ -296,6 +310,8 @@ class WordCloudPlugin(Star):
                 logger.error(f"获取历史消息统计失败: {e}")
 
             logger.info("WordCloud插件初始化完成")
+            # 设置初始化完成标志
+            self._initialized = True
         except Exception as e:
             logger.error(f"WordCloud插件初始化失败: {e}")
             # 记录详细的堆栈跟踪
@@ -328,15 +344,15 @@ class WordCloudPlugin(Star):
                     / "fonts"
                     / os.path.basename(font_path)
                 )
-                if os.path.exists(data_font_path):
+                if data_font_path.exists():
                     font_path = str(data_font_path)
-                    logger.info(f"使用数据目录中的字体: {font_path}")
+                    logger.debug(f"使用数据目录中的字体: {font_path}")
                 else:
                     # 如果数据目录中不存在，则检查插件目录
                     plugin_font_path = constant_module.PLUGIN_DIR / font_path
-                    if os.path.exists(plugin_font_path):
+                    if plugin_font_path.exists():
                         font_path = str(plugin_font_path)
-                        logger.info(f"使用插件目录中的字体: {font_path}")
+                        logger.debug(f"使用插件目录中的字体: {font_path}")
 
         # 获取停用词文件路径
         stop_words_file = self.config.get("stop_words_file", "stop_words.txt")
@@ -349,15 +365,15 @@ class WordCloudPlugin(Star):
                 / "resources"
                 / os.path.basename(stop_words_file)
             )
-            if os.path.exists(data_stopwords_path):
+            if data_stopwords_path.exists():
                 stop_words_file = str(data_stopwords_path)
-                logger.info(f"使用数据目录中的停用词文件: {stop_words_file}")
+                logger.debug(f"使用数据目录中的停用词文件: {stop_words_file}")
             else:
                 # 如果数据目录中不存在，则检查插件目录
                 plugin_stopwords_path = constant_module.PLUGIN_DIR / stop_words_file
-                if os.path.exists(plugin_stopwords_path):
+                if plugin_stopwords_path.exists():
                     stop_words_file = str(plugin_stopwords_path)
-                    logger.info(f"使用插件目录中的停用词文件: {stop_words_file}")
+                    logger.debug(f"使用插件目录中的停用词文件: {stop_words_file}")
 
         # 初始化词云生成器
         self.wordcloud_generator = WordCloudGenerator(
@@ -372,7 +388,7 @@ class WordCloudPlugin(Star):
             shape=shape,
         )
 
-        logger.info("词云生成器初始化完成")
+        logger.debug("词云生成器初始化完成")
 
     def _setup_scheduled_tasks(self):
         """设置定时任务"""
@@ -382,7 +398,7 @@ class WordCloudPlugin(Star):
             if auto_generate_enabled:
                 # 获取cron表达式
                 cron_expression = self.config.get("auto_generate_cron", "0 20 * * *")
-                logger.info(f"自动生成词云cron表达式: {cron_expression}")
+                logger.debug(f"自动生成词云cron表达式: {cron_expression}")
 
                 # 兼容旧版本的6字段cron格式（带秒的格式）
                 # 如果是6字段格式（0 0 20 * * *），转换为5字段格式（0 20 * * *）
@@ -391,7 +407,7 @@ class WordCloudPlugin(Star):
                     if len(fields) == 6:
                         # 去掉秒字段，只保留后5个字段
                         cron_expression = " ".join(fields[1:])
-                        logger.info(
+                        logger.debug(
                             f"转换6字段cron表达式为5字段: {' '.join(fields)} -> {cron_expression}"
                         )
 
@@ -402,11 +418,11 @@ class WordCloudPlugin(Star):
                         callback=self.auto_generate_wordcloud,
                         task_id="auto_generate_wordcloud",
                     )
-                    logger.info(f"已添加自动生成词云任务，执行时间: {cron_expression}")
+                    logger.debug(f"已添加自动生成词云任务，执行时间: {cron_expression}")
                 except Exception as auto_task_error:
                     logger.error(f"添加自动生成词云任务失败: {auto_task_error}")
             else:
-                logger.info("自动生成词云功能已禁用")
+                logger.debug("自动生成词云功能已禁用")
 
             # 检查是否启用每日生成功能
             daily_generate_enabled = self.config.get("daily_generate_enabled", True)
@@ -416,7 +432,7 @@ class WordCloudPlugin(Star):
                 daily_cron = time_str_to_cron(daily_time)
 
                 # 检查生成的cron是否有效
-                logger.info(
+                logger.debug(
                     f"每日词云生成时间: {daily_time}, 转换为cron表达式: {daily_cron}"
                 )
 
@@ -427,7 +443,7 @@ class WordCloudPlugin(Star):
 
                     # 解析时间字符串
                     hour, minute = parse_time_str(daily_time)
-                    logger.info(f"每日词云设置为 {hour:02d}:{minute:02d} 执行")
+                    logger.debug(f"每日词云设置为 {hour:02d}:{minute:02d} 执行")
 
                     # 验证cron表达式
                     if not croniter.is_valid(daily_cron):
@@ -440,7 +456,7 @@ class WordCloudPlugin(Star):
                     base = datetime.datetime.now()
                     cron = croniter(daily_cron, base)
                     next_run = cron.get_next(datetime.datetime)
-                    logger.info(
+                    logger.debug(
                         f"每日词云下次执行时间: {next_run.strftime('%Y-%m-%d %H:%M:%S')}"
                     )
 
@@ -448,7 +464,7 @@ class WordCloudPlugin(Star):
                     time_diff = next_run - base
                     hours, remainder = divmod(time_diff.total_seconds(), 3600)
                     minutes, seconds = divmod(remainder, 60)
-                    logger.info(
+                    logger.debug(
                         f"距离下次执行还有: {int(hours)}小时{int(minutes)}分钟{int(seconds)}秒"
                     )
 
@@ -456,7 +472,7 @@ class WordCloudPlugin(Star):
                     import time
 
                     timezone_offset = -time.timezone // 3600  # 转换为小时
-                    logger.info(
+                    logger.debug(
                         f"系统时区信息: UTC{'+' if timezone_offset >= 0 else ''}{timezone_offset}"
                     )
 
@@ -472,7 +488,7 @@ class WordCloudPlugin(Star):
                     )
 
                     if task_added:
-                        logger.info(
+                        logger.debug(
                             f"已成功添加每日词云生成任务，执行时间: {daily_time}({daily_cron})"
                         )
                     else:
@@ -482,24 +498,25 @@ class WordCloudPlugin(Star):
                     logger.error(f"添加每日词云生成任务失败: {daily_task_error}")
                     logger.error(f"任务添加错误详情: {traceback.format_exc()}")
             else:
-                logger.info("每日生成词云功能已禁用")
+                logger.debug("每日生成词云功能已禁用")
 
-            # 启动调度器
-            self.scheduler.start()
-            logger.info("定时任务调度器已启动")
-
-            # 输出当前注册的所有任务信息
-            tasks = getattr(self.scheduler, "tasks", {})
-            if tasks:
-                logger.info(f"当前注册的定时任务数量: {len(tasks)}")
-                for task_id, task_info in tasks.items():
-                    if isinstance(task_info, dict) and "next_run" in task_info:
-                        next_time = time.strftime(
-                            "%Y-%m-%d %H:%M:%S", time.localtime(task_info["next_run"])
-                        )
-                        logger.info(f"任务 '{task_id}' 下次执行时间: {next_time}")
-            else:
-                logger.warning("未找到任何注册的定时任务")
+            # 启动调度器 (如果尚未启动)
+            if not getattr(self.scheduler, "running", False):
+                self.scheduler.start()
+                logger.debug("定时任务调度器已启动")
+                
+                # 输出当前注册的所有任务信息（只在调度器首次启动时输出）
+                tasks = getattr(self.scheduler, "tasks", {})
+                if tasks:
+                    logger.info(f"当前注册的定时任务数量: {len(tasks)}")
+                    for task_id, task_info in tasks.items():
+                        if isinstance(task_info, dict) and "next_run" in task_info:
+                            next_time = time.strftime(
+                                "%Y-%m-%d %H:%M:%S", time.localtime(task_info["next_run"])
+                            )
+                            logger.debug(f"任务 '{task_id}' 下次执行时间: {next_time}")
+                else:
+                    logger.info("未找到任何注册的定时任务")
 
         except Exception as e:
             logger.error(f"设置定时任务失败: {e}")
@@ -1112,7 +1129,7 @@ class WordCloudPlugin(Star):
 
     async def auto_generate_wordcloud(self):
         """自动生成词云的定时任务回调"""
-        logger.info("开始执行自动生成词云任务")
+        logger.debug("开始执行自动生成词云任务")
 
         try:
             # 获取配置
@@ -1177,7 +1194,7 @@ class WordCloudPlugin(Star):
                     logger.error(f"为会话 {session_id} 自动生成词云失败: {e}")
                     continue
 
-            logger.info("自动生成词云任务执行完成")
+            logger.debug("自动生成词云任务执行完成")
 
         except Exception as e:
             logger.error(f"自动生成词云任务执行失败: {e}")
@@ -1186,7 +1203,7 @@ class WordCloudPlugin(Star):
         """
         生成每日词云定时任务
         """
-        logger.info("开始执行每日词云生成任务")
+        logger.debug("开始执行每日词云生成任务")
         
         # 使用任务ID创建任务锁，防止并发执行
         task_id = "daily_wordcloud_task"
@@ -1310,7 +1327,7 @@ class WordCloudPlugin(Star):
             logger.error(f"错误详情: {traceback.format_exc()}")
             yield event.plain_result(f"强制执行每日词云生成任务失败: {str(e)}")
 
-    def terminate(self):
+    async def terminate(self):
         """
         插件终止时的清理操作
         """
@@ -1319,10 +1336,10 @@ class WordCloudPlugin(Star):
             
             # 确保调度器被正确停止
             if hasattr(self, 'scheduler') and self.scheduler is not None:
-                logger.info("Stopping scheduler...")
+                logger.debug("Stopping scheduler...")
                 try:
                     self.scheduler.stop()
-                    logger.info("Scheduler stopped successfully")
+                    logger.debug("Scheduler stopped successfully")
                 except Exception as e:
                     logger.error(f"Error stopping scheduler: {e}")
                 
@@ -1331,10 +1348,10 @@ class WordCloudPlugin(Star):
             
             # 确保历史管理器被正确关闭
             if hasattr(self, 'history_manager') and self.history_manager is not None:
-                logger.info("Closing history manager...")
+                logger.debug("Closing history manager...")
                 try:
                     self.history_manager.close()
-                    logger.info("History manager closed successfully")
+                    logger.debug("History manager closed successfully")
                 except Exception as e:
                     logger.error(f"Error closing history manager: {e}")
                 
@@ -1343,7 +1360,7 @@ class WordCloudPlugin(Star):
             
             # 如果有事件循环引用，确保它被清理
             if hasattr(self, 'main_loop') and self.main_loop is not None:
-                logger.info("Cleaning up main loop reference")
+                logger.debug("Cleaning up main loop reference")
                 self.main_loop = None
             
             logger.info("WordCloud plugin terminated")
