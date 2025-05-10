@@ -3,9 +3,14 @@ AstrBot 词云生成插件
 """
 
 import os
+import sys
+import time
+import datetime
+import traceback
 import asyncio
 from typing import List, Dict, Any, Optional, Tuple, Set
 from pathlib import Path
+import importlib
 
 from astrbot.api import logger
 from astrbot.api import AstrBotConfig
