@@ -1,7 +1,7 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.2.1-blueviolet?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.3.0-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
@@ -356,6 +356,25 @@ AstrBot/data/plugin_data/cloudrank/
     *   **解决**: 确保消息格式完全匹配 `constant.py` 中定义的关键词，包括空格和标点符号。确保消息不以 `/` 开头，否则会被视为命令而非普通消息。
 
 ## 🔄 更新日志 (Changelog)
+
+### v1.3.0
+
+- 🔧 **修复了Hot Reload导致的定时任务重复执行问题**：
+  - 添加了单例模式，确保每个上下文只有一个调度器实例
+  - 完善了资源释放机制，防止内存泄漏
+  - 优化了事件循环和线程管理
+- 🔒 **增强了线程安全性**：
+  - 添加了线程锁，防止并发操作导致的冲突
+  - 优化了文件操作时的同步方式
+- 🎨 **改进了词云生成过程**：
+  - 防止多线程同时生成相同词云
+  - 添加了等待机制，避免重复生成
+- 📝 **完善了日志记录**：
+  - 添加更详细的错误和状态日志
+  - 优化调试信息的输出
+- ⚡ **优化性能**：
+  - 减少CPU使用率，优化任务检查间隔
+  - 更高效的资源管理和回收
 
 ### v1.2.1
 - 🔄 更新自然语言关键词：

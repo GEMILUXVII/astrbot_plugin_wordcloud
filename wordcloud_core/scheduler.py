@@ -17,6 +17,11 @@ from astrbot.api.event import MessageChain
 from astrbot.api import logger
 
 
+# 使用全局变量跟踪调度器实例
+_SCHEDULER_INSTANCES = {}
+_SCHEDULER_LOCK = threading.Lock()
+
+
 class TaskScheduler:
     """
     定时任务调度器类，用于管理定时任务
@@ -33,15 +38,45 @@ class TaskScheduler:
             main_loop: 主事件循环的引用
             debug_mode: 是否启用调试模式
         """
-        self.context = context
-        self.tasks: Dict[str, Dict[str, Any]] = {}
-        self.running = False
-        self.thread = None
-        self.main_loop = main_loop
-        self.debug_mode = debug_mode  # Store debug mode flag
-        logger.info(
-            f"TaskScheduler initialized with main loop ID: {id(self.main_loop)}, Debug Mode: {self.debug_mode}"
-        )
+        # 检查是否有同一个上下文的调度器实例
+        global _SCHEDULER_INSTANCES
+        
+        with _SCHEDULER_LOCK:
+            # 使用上下文的ID作为标识符
+            context_id = id(context)
+            
+            if context_id in _SCHEDULER_INSTANCES:
+                existing_scheduler = _SCHEDULER_INSTANCES[context_id]
+                if existing_scheduler.running:
+                    logger.warning(f"已存在运行中的调度器实例(ID: {context_id})，正在复用该实例。")
+                    # 复制现有实例的属性
+                    self.context = existing_scheduler.context
+                    self.tasks = existing_scheduler.tasks
+                    self.running = existing_scheduler.running
+                    self.thread = existing_scheduler.thread
+                    self.main_loop = existing_scheduler.main_loop
+                    self.debug_mode = existing_scheduler.debug_mode
+                    self._event_loop = getattr(existing_scheduler, "_event_loop", None)
+                    return
+                else:
+                    # 如果实例存在但没有运行，我们应该清理它
+                    logger.info(f"发现未运行的调度器实例(ID: {context_id})，将替换它。")
+            
+            # 如果没有找到实例或实例没有运行，创建一个新实例
+            self.context = context
+            self.tasks: Dict[str, Dict[str, Any]] = {}
+            self.running = False
+            self.thread = None
+            self.main_loop = main_loop
+            self.debug_mode = debug_mode  # Store debug mode flag
+            self._event_loop = None
+            
+            # 将新实例添加到全局字典
+            _SCHEDULER_INSTANCES[context_id] = self
+            
+            logger.info(
+                f"TaskScheduler initialized with main loop ID: {id(self.main_loop)}, Debug Mode: {self.debug_mode}"
+            )
 
     def add_task(self, cron_expression: str, callback, task_id: str) -> bool:
         """
@@ -56,6 +91,10 @@ class TaskScheduler:
             是否成功添加任务
         """
         try:
+            # 检查任务是否已存在
+            if task_id in self.tasks:
+                logger.warning(f"任务ID {task_id} 已存在，将被覆盖")
+                
             # 验证cron表达式
             if not croniter.is_valid(cron_expression):
                 logger.error(f"无效的cron表达式: {cron_expression}")
@@ -133,7 +172,21 @@ class TaskScheduler:
             return
 
         self.running = True
-        self.thread = threading.Thread(target=self._run_scheduler)
+        
+        # 确保没有旧的线程在运行
+        if self.thread and self.thread.is_alive():
+            logger.warning("调度器已有线程正在运行，尝试停止它")
+            # 尝试优雅地停止旧线程
+            try:
+                old_running_state = self.running
+                self.running = False
+                self.thread.join(timeout=2.0)
+                self.running = old_running_state
+            except Exception as e:
+                logger.error(f"停止旧线程时出错: {e}")
+                
+        # 创建新线程
+        self.thread = threading.Thread(target=self._run_scheduler, name=f"TaskScheduler-{id(self)}")
         self.thread.daemon = True
         self.thread.start()
         logger.info("调度器已启动")
@@ -144,10 +197,46 @@ class TaskScheduler:
             logger.warning("调度器未运行")
             return
 
+        logger.info("正在停止调度器...")
         self.running = False
+        
         if self.thread and self.thread.is_alive():
-            self.thread.join(timeout=1.0)
+            try:
+                # 等待线程结束
+                self.thread.join(timeout=5.0)
+                if self.thread.is_alive():
+                    logger.warning("调度器线程未能在超时时间内停止")
+                else:
+                    logger.info("调度器线程已退出")
+            except Exception as e:
+                logger.error(f"停止调度器线程时出错: {e}")
+        
+        # 清理事件循环
+        if self._event_loop:
+            try:
+                # 尝试关闭事件循环
+                if not self._event_loop.is_closed():
+                    # 在Windows上，有时关闭事件循环可能会抛出异常
+                    try:
+                        if hasattr(self._event_loop, 'shutdown_asyncgens'):
+                            self._event_loop.run_until_complete(self._event_loop.shutdown_asyncgens())
+                        self._event_loop.close()
+                        logger.info("调度器线程的事件循环已关闭")
+                    except Exception as e:
+                        logger.error(f"关闭事件循环时出错: {e}")
+            except Exception as e:
+                logger.error(f"清理事件循环时出错: {e}")
+                
+            self._event_loop = None
+            
         logger.info("调度器已停止")
+        
+        # 从实例字典中移除自己
+        with _SCHEDULER_LOCK:
+            for context_id, scheduler in list(_SCHEDULER_INSTANCES.items()):
+                if scheduler is self:
+                    del _SCHEDULER_INSTANCES[context_id]
+                    break
 
     def _run_scheduler(self) -> None:
         """运行调度器线程"""
@@ -159,211 +248,119 @@ class TaskScheduler:
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
+            self._event_loop = loop  # 保存引用以便清理
             logger.info("为调度器线程创建了新的事件循环")
         except Exception as e:
             logger.error(f"为调度器线程创建事件循环失败: {e}")
             logger.error(f"事件循环创建错误详情: {traceback.format_exc()}")
             return
 
-        while self.running:
-            try:
-                now = time.time()
-                current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(now))
-
-                # 记录心跳日志
-                if now - last_heartbeat >= heartbeat_interval:
-                    logger.info(
-                        f"调度器正在运行 - 当前时间: {current_time}, 任务数量: {len(self.tasks)}"
-                    )
-                    last_heartbeat = now
-                else:
-                    logger.debug(f"调度器检查时间点: {current_time}")
-
-                # 检查任务是否需要执行
-                for task_id, task in list(self.tasks.items()):
-                    try:
-                        # 确保任务有所有必要的字段
-                        if not all(
-                            k in task
-                            for k in ["next_run", "running", "cron", "callback"]
-                        ):
-                            missing_keys = [
-                                k
-                                for k in ["next_run", "running", "cron", "callback"]
-                                if k not in task
-                            ]
-                            logger.warning(
-                                f"任务 {task_id} 缺少必要字段: {missing_keys}"
-                            )
-                            continue
-
-                        next_run = task["next_run"]
-                        scheduled_time = time.strftime(
-                            "%Y-%m-%d %H:%M:%S", time.localtime(next_run)
-                        )
-                        time_diff = next_run - now
-
-                        # 输出即将执行的任务信息
-                        if 0 < time_diff < 60:  # 如果任务将在1分钟内执行
-                            logger.info(
-                                f"任务 {task_id} 将在 {time_diff:.1f} 秒后执行，计划时间: {scheduled_time} (本地时间)"
-                            )
-                        elif (
-                            time_diff < 0
-                            and abs(time_diff) > 300
-                            and not task["running"]
-                        ):
-                            # 任务已经过期5分钟以上但尚未执行
-                            logger.warning(
-                                f"发现过期未执行的任务 {task_id}，应在 {scheduled_time} 执行，已延迟 {abs(time_diff):.1f} 秒"
-                            )
-
-                        # 三种条件会触发任务执行：
-                        # 1. 已到执行时间（next_run <= now）
-                        # 2. 任务未在运行中（not task["running"]）
-                        # 3. 如果任务已经过期超过5秒但不到1小时，仍然执行（防止小的时间差异或系统休眠导致任务被跳过）
-                        on_time_execution = next_run <= now
-                        grace_period_execution = 5 < now - next_run < 3600
-
-                        if (on_time_execution or grace_period_execution) and not task[
-                            "running"
-                        ]:
-                            # 记录任务执行时间
-                            execution_time = time.strftime(
-                                "%Y-%m-%d %H:%M:%S", time.localtime(now)
-                            )
-
-                            if grace_period_execution:
-                                logger.warning(
-                                    f"延迟执行任务: {task_id}，当前时间: {execution_time}，计划时间: {scheduled_time}，延迟: {now - next_run:.1f}秒"
-                                )
-                            else:
-                                logger.info(
-                                    f"开始执行定时任务: {task_id}，执行时间: {execution_time}，计划时间: {scheduled_time}"
-                                )
-
-                            # 标记任务为运行中
-                            task["running"] = True
-
-                            # 获取主应用的事件循环用于执行任务
-                            try:
-                                # --- 使用存储的主循环引用 ---
-                                if not self.main_loop:
-                                    logger.error(
-                                        f"SCHED_CRITICAL_ERROR: [{task_id}] Stored main_loop reference is None! Cannot submit task."
-                                    )
-                                    task["running"] = False
-                                    continue
-
-                                loop_running = self.main_loop.is_running()
-                                if self.debug_mode:
-                                    logger.debug(
-                                        f"SCHED_RUNNER: [{task_id}] Using stored main loop for task submission: ID {id(self.main_loop)}, Running: {loop_running}"
-                                    )
-
-                                if not loop_running:
-                                    # Keep CRITICAL log level, but check debug mode before logging potentially sensitive future state
-                                    logger.critical(
-                                        f"SCHED_CRITICAL_ERROR: [{task_id}] Stored main loop (ID {id(self.main_loop)}) is NOT RUNNING when trying to submit task! Task cannot execute."
-                                    )
-                                    # Skip submission if loop is not running
-                                    task["running"] = (
-                                        False  # Ensure task is marked not running
-                                    )
-                                    continue  # Skip this task attempt
-
-                                coro_to_run = self._execute_task(task_id, task)
-                                if self.debug_mode:
-                                    logger.debug(
-                                        f"SCHED_RUNNER: [{task_id}] Coroutine object for _execute_task created: {type(coro_to_run)}"
-                                    )
-
-                                future = asyncio.run_coroutine_threadsafe(
-                                    coro_to_run, self.main_loop
-                                )
-                                if self.debug_mode:
-                                    logger.debug(
-                                        f"SCHED_RUNNER: [{task_id}] run_coroutine_threadsafe called using stored loop. Future object: {future}. State: {future._state if hasattr(future, '_state') else 'N/A'}"
-                                    )
-                                # ------------------------------
-
-                                # 定义回调函数
-                                def handle_future_done(fut):
-                                    # Make internal runner logs debug level
-                                    if self.debug_mode:
-                                        logger.debug(
-                                            f"SCHED_RUNNER: [{task_id}] handle_future_done CALLED. Future state: {fut._state if hasattr(fut, '_state') else 'N/A'}"
-                                        )
-                                    try:
-                                        result = fut.result()
-                                        if self.debug_mode:
-                                            logger.debug(
-                                                f"SCHED_RUNNER: [{task_id}] Future result: {result}"
-                                            )
-                                        logger.info(
-                                            f"任务 {task_id} 在主循环中成功完成."
-                                        )
-                                    except asyncio.CancelledError:
-                                        logger.warning(
-                                            f"任务 {task_id} 在主循环中被取消."
-                                        )  # Keep warning level
-                                        if self.debug_mode:
-                                            logger.debug(
-                                                f"SCHED_RUNNER: [{task_id}] Future was cancelled."
-                                            )
-                                    except Exception as e_inner:
-                                        if self.debug_mode:
-                                            logger.debug(
-                                                f"SCHED_RUNNER: [{task_id}] Exception from future: {e_inner}"
-                                            )
-                                        logger.error(
-                                            f"任务 {task_id} 在主循环中执行失败: {e_inner}"
-                                        )
-                                        logger.error(
-                                            f"任务 {task_id} 错误详情 (从主循环回调): {traceback.format_exc()}"
-                                        )
-
-                                future.add_done_callback(handle_future_done)
-                                if self.debug_mode:
-                                    logger.debug(
-                                        f"SCHED_RUNNER: [{task_id}] handle_future_done callback ADDED to future."
-                                    )
-
-                            except Exception as e_submit:
-                                logger.error(
-                                    f"提交任务 {task_id} 到主事件循环失败: {e_submit}"
-                                )  # Keep as error
-                                task["running"] = False
-                                logger.error(
-                                    f"任务提交错误详情: {traceback.format_exc()}"
-                                )  # Keep as error
-                                if self.debug_mode:  # Add debug log for context
-                                    logger.debug(
-                                        f"SCHED_RUNNER: [{task_id}] Failed to submit task using stored main event loop: {e_submit}"
-                                    )
-                                    logger.debug(
-                                        f"SCHED_RUNNER: [{task_id}] Task submission error details: {traceback.format_exc()}"
-                                    )
-
-                    except Exception as task_check_error:
-                        logger.error(f"检查任务 {task_id} 时出错: {task_check_error}")
-                        logger.error(f"任务检查错误详情: {traceback.format_exc()}")
-
-                # 每1秒检查一次任务
-                time.sleep(1)
-            except Exception as e:
-                logger.error(f"调度器循环出错: {e}")
-                logger.error(f"调度器循环错误详情: {traceback.format_exc()}")
-                time.sleep(5)  # 出错后等待5秒再继续
-
-        # 关闭事件循环
+        # 线程主循环，每秒检查一次任务
+        task_check_interval = 1.0  # 秒
+        last_task_check = time.time()
+        
         try:
-            loop.close()
-            logger.info("调度器线程的事件循环已关闭")
-        except Exception as e:
-            logger.error(f"关闭事件循环失败: {e}")
+            while self.running:
+                try:
+                    # 适当休眠，避免CPU过度使用
+                    now = time.time()
+                    time_since_last_check = now - last_task_check
+                    
+                    if time_since_last_check < task_check_interval:
+                        # 如果距离上次检查不到1秒，休眠一段时间
+                        sleep_time = task_check_interval - time_since_last_check
+                        time.sleep(sleep_time)
+                        now = time.time()
+                        
+                    last_task_check = now
+                    current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(now))
 
-        logger.info("调度器线程已退出")
+                    # 记录心跳日志
+                    if now - last_heartbeat >= heartbeat_interval:
+                        logger.info(
+                            f"调度器正在运行 - 当前时间: {current_time}, 任务数量: {len(self.tasks)}"
+                        )
+                        last_heartbeat = now
+                    
+                    # 检查任务是否需要执行
+                    for task_id, task in list(self.tasks.items()):
+                        try:
+                            # 确保任务有所有必要的字段
+                            if not all(
+                                k in task
+                                for k in ["next_run", "running", "cron", "callback"]
+                            ):
+                                missing_keys = [
+                                    k
+                                    for k in ["next_run", "running", "cron", "callback"]
+                                    if k not in task
+                                ]
+                                logger.warning(
+                                    f"任务 {task_id} 缺少必要字段: {missing_keys}"
+                                )
+                                continue
+
+                            next_run = task["next_run"]
+                            
+                            # 检查任务是否应该执行
+                            if now >= next_run and not task["running"]:
+                                # 获取执行时间
+                                exec_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(next_run))
+                                logger.info(f"开始执行定时任务: {task_id}，执行时间: {current_time}，计划时间: {exec_time}")
+                                
+                                # 标记任务为正在运行
+                                task["running"] = True
+                                
+                                # 更新下一次执行时间
+                                task["next_run"] = task["cron"].get_next(datetime.datetime).timestamp()
+                                
+                                # 在当前事件循环中执行任务
+                                asyncio.run_coroutine_threadsafe(
+                                    self._execute_task(task_id, task),
+                                    loop
+                                )
+                        except Exception as e:
+                            logger.error(f"检查任务 {task_id} 执行条件时出错: {e}")
+                            logger.error(f"错误详情: {traceback.format_exc()}")
+                            
+                            # 重置任务状态，避免任务卡住
+                            if task_id in self.tasks:
+                                self.tasks[task_id]["running"] = False
+                
+                except Exception as e:
+                    logger.error(f"调度器主循环出错: {e}")
+                    logger.error(f"错误详情: {traceback.format_exc()}")
+                    # 短暂休眠以避免在错误情况下的紧密循环
+                    time.sleep(1.0)
+        
+        except Exception as e:
+            logger.error(f"调度器线程异常终止: {e}")
+            logger.error(f"错误详情: {traceback.format_exc()}")
+        finally:
+            # 关闭事件循环
+            try:
+                if not loop.is_closed():
+                    logger.info("关闭调度器线程的事件循环...")
+                    
+                    # 关闭前尝试取消所有待处理的任务
+                    pending = asyncio.all_tasks(loop) if hasattr(asyncio, 'all_tasks') else asyncio.Task.all_tasks(loop)
+                    for task in pending:
+                        task.cancel()
+                    
+                    # 让事件循环运行直到所有任务处理完取消操作
+                    if pending:
+                        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                    
+                    # 关闭事件循环
+                    if hasattr(loop, 'shutdown_asyncgens'):
+                        loop.run_until_complete(loop.shutdown_asyncgens())
+                    
+                    loop.close()
+                    logger.info("调度器线程的事件循环已关闭")
+            except Exception as e:
+                logger.error(f"关闭事件循环时出错: {e}")
+            
+            logger.info("调度器线程已退出")
 
     async def _execute_task(self, task_id: str, task: Dict[str, Any]) -> None:
         """
