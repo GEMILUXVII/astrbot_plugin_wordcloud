@@ -41,6 +41,17 @@ class TaskScheduler:
         # 检查是否有同一个上下文的调度器实例
         global _SCHEDULER_INSTANCES
         
+        # 保存debug_mode标志
+        self.debug_mode = debug_mode
+        
+        # 如果开启了debug模式，设置日志级别为DEBUG
+        if debug_mode:
+            try:
+                import logging
+                logger.setLevel(logging.DEBUG)
+            except Exception as e:
+                logger.warning(f"设置日志级别失败: {e}")
+            
         with _SCHEDULER_LOCK:
             # 使用上下文的ID作为标识符
             context_id = id(context)
@@ -60,7 +71,7 @@ class TaskScheduler:
                     return
                 else:
                     # 如果实例存在但没有运行，我们应该清理它
-                    logger.info(f"发现未运行的调度器实例(ID: {context_id})，将替换它。")
+                    logger.debug(f"发现未运行的调度器实例(ID: {context_id})，将替换它。")
             
             # 如果没有找到实例或实例没有运行，创建一个新实例
             self.context = context
@@ -68,13 +79,12 @@ class TaskScheduler:
             self.running = False
             self.thread = None
             self.main_loop = main_loop
-            self.debug_mode = debug_mode  # Store debug mode flag
             self._event_loop = None
             
             # 将新实例添加到全局字典
             _SCHEDULER_INSTANCES[context_id] = self
             
-            logger.info(
+            logger.debug(
                 f"TaskScheduler initialized with main loop ID: {id(self.main_loop)}, Debug Mode: {self.debug_mode}"
             )
 
@@ -189,7 +199,7 @@ class TaskScheduler:
         self.thread = threading.Thread(target=self._run_scheduler, name=f"TaskScheduler-{id(self)}")
         self.thread.daemon = True
         self.thread.start()
-        logger.info("调度器已启动")
+        logger.debug("调度器已启动")
 
     def stop(self) -> None:
         """停止调度器"""
@@ -197,7 +207,7 @@ class TaskScheduler:
             logger.warning("调度器未运行")
             return
 
-        logger.info("正在停止调度器...")
+        logger.debug("正在停止调度器...")
         self.running = False
         
         if self.thread and self.thread.is_alive():
@@ -207,7 +217,7 @@ class TaskScheduler:
                 if self.thread.is_alive():
                     logger.warning("调度器线程未能在超时时间内停止")
                 else:
-                    logger.info("调度器线程已退出")
+                    logger.debug("调度器线程已退出")
             except Exception as e:
                 logger.error(f"停止调度器线程时出错: {e}")
         
@@ -221,7 +231,7 @@ class TaskScheduler:
                         if hasattr(self._event_loop, 'shutdown_asyncgens'):
                             self._event_loop.run_until_complete(self._event_loop.shutdown_asyncgens())
                         self._event_loop.close()
-                        logger.info("调度器线程的事件循环已关闭")
+                        logger.debug("调度器线程的事件循环已关闭")
                     except Exception as e:
                         logger.error(f"关闭事件循环时出错: {e}")
             except Exception as e:
@@ -229,7 +239,7 @@ class TaskScheduler:
                 
             self._event_loop = None
             
-        logger.info("调度器已停止")
+        logger.debug("调度器已停止")
         
         # 从实例字典中移除自己
         with _SCHEDULER_LOCK:
@@ -240,7 +250,7 @@ class TaskScheduler:
 
     def _run_scheduler(self) -> None:
         """运行调度器线程"""
-        logger.info("调度器线程已启动")
+        logger.debug("调度器线程已启动")
         last_heartbeat = time.time()
         heartbeat_interval = 600  # 每10分钟记录一次心跳日志
 
@@ -249,7 +259,7 @@ class TaskScheduler:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             self._event_loop = loop  # 保存引用以便清理
-            logger.info("为调度器线程创建了新的事件循环")
+            logger.debug("为调度器线程创建了新的事件循环")
         except Exception as e:
             logger.error(f"为调度器线程创建事件循环失败: {e}")
             logger.error(f"事件循环创建错误详情: {traceback.format_exc()}")
@@ -356,11 +366,11 @@ class TaskScheduler:
                         loop.run_until_complete(loop.shutdown_asyncgens())
                     
                     loop.close()
-                    logger.info("调度器线程的事件循环已关闭")
+                    logger.debug("调度器线程的事件循环已关闭")
             except Exception as e:
                 logger.error(f"关闭事件循环时出错: {e}")
             
-            logger.info("调度器线程已退出")
+            logger.debug("调度器线程已退出")
 
     async def _execute_task(self, task_id: str, task: Dict[str, Any]) -> None:
         """

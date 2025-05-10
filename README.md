@@ -1,11 +1,11 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.0-blueviolet?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.3.1-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
-  <img src="https://img.shields.io/badge/updated-2025--05--10-brightgreen?style=flat-square" alt="Last Updated">
+  <img src="https://img.shields.io/badge/updated-2025--05--11-brightgreen?style=flat-square" alt="Last Updated">
 </div>
 
 ## 📝 介绍
@@ -357,8 +357,13 @@ AstrBot/data/plugin_data/cloudrank/
 
 ## 🔄 更新日志 (Changelog)
 
-### v1.3.0
+### v1.3.1
+- 📝 **完善日志**：
+  - 标准化日志输出，便于排查问题和监控运行状态
+- 🔄 **修复线程问题**：
+  - 解决重载时不能安全中止的警告
 
+### v1.3.0
 - 🔧 **修复了Hot Reload导致的定时任务重复执行问题**：
   - 添加了单例模式，确保每个上下文只有一个调度器实例
   - 完善了资源释放机制，防止内存泄漏

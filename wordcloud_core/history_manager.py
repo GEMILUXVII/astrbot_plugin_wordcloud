@@ -95,11 +95,11 @@ class HistoryManager:
                         if hasattr(self.db, "commit"):
                             self.db.commit()
 
-                logger.info("WordCloud历史消息表索引创建成功")
+                logger.debug("WordCloud历史消息表索引创建成功")
             except Exception as e:
-                logger.warning(f"创建WordCloud历史消息表索引失败，这不会影响功能: {e}")
+                logger.error(f"创建WordCloud历史消息表索引失败，这不会影响功能: {e}")
 
-            logger.info("WordCloud历史消息表创建成功或已存在")
+            logger.debug("WordCloud历史消息表创建成功或已存在")
         except Exception as e:
             logger.error(f"创建WordCloud历史消息表失败: {e}")
 
@@ -333,7 +333,7 @@ class HistoryManager:
                 sessions = [row[0] for row in cursor.fetchall()]
 
                 cursor.close()
-                logger.info(f"获取到{len(sessions)}个活跃会话(天数: {days})")
+                logger.debug(f"获取到{len(sessions)}个活跃会话(天数: {days})")
                 return sessions
             except Exception as db_error:
                 logger.error(f"获取活跃会话数据库操作失败: {db_error}")
