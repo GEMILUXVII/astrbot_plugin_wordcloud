@@ -6,6 +6,8 @@ import os
 import time
 import datetime
 import shutil
+import traceback
+import threading
 from typing import Dict, List, Optional, Union, Tuple
 from collections import Counter
 from pathlib import Path
@@ -34,6 +36,19 @@ from ..constant import (
     PLUGIN_NAME,
 )
 
+# 全局锁，用于防止多个线程同时生成相同的词云
+_WORDCLOUD_LOCKS = {}
+_GLOBAL_LOCK = threading.Lock()
+
+# 确保当前词云生成请求唯一性的方法
+def _get_lock_for_key(key: str) -> threading.Lock:
+    """
+    获取指定键的锁对象，如果不存在则创建
+    """
+    with _GLOBAL_LOCK:
+        if key not in _WORDCLOUD_LOCKS:
+            _WORDCLOUD_LOCKS[key] = threading.Lock()
+        return _WORDCLOUD_LOCKS[key]
 
 class WordCloudGenerator:
     """词云生成器类"""
@@ -468,125 +483,163 @@ class WordCloudGenerator:
 
         if not word_counts:
             raise ValueError("无有效词频数据，无法生成词云")
-
-        # 生成词云
-        self.wordcloud.generate_from_frequencies(word_counts)
-
+            
         # 获取图片存储路径
         image_path = get_image_path(session_id, timestamp)
-
-        # 确保目录存在
-        image_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # 先保存词云图像到临时文件，避免直接操作wordcloud对象导致维度不匹配
-        temp_path = image_path.parent / f"temp_{image_path.name}"
-        self.wordcloud.to_file(str(temp_path))
-
-        # 读取保存的图像
-        wordcloud_img = np.array(Image.open(temp_path))
-
-        # 使用matplotlib创建带标题的完整图像
-        fig_width, fig_height = 10, 6.5
-        dpi = 150
-
-        # 创建带有背景色的图表
-        fig = plt.figure(
-            figsize=(fig_width, fig_height), facecolor=self.background_color, dpi=dpi
-        )
-        plt.rcParams.update({"figure.autolayout": True})
-        ax = plt.axes()
-        ax.set_facecolor(self.background_color)
-        ax.set_position([0, 0, 1, 0.9])  # 为标题留出少量空间
-
-        # 去除边框和刻度
-        plt.axis("off")
-        plt.box(False)
-        plt.tight_layout(pad=0.1)  # 减少内边距
-
-        # 绘制词云图像
-        plt.imshow(wordcloud_img, interpolation="bilinear")
-
-        # 设置标题，使用对比色
-        if title:
-            # 选择与背景相反的颜色
-            title_color = (
-                "white" if self._is_dark_color(self.background_color) else "black"
-            )
-
-            logger.info(
-                f"设置词云标题: {title}, 背景色: {self.background_color}, 标题颜色: {title_color}"
-            )
-
-            # 设置中文标题字体
-            if self.font_path and os.path.exists(self.font_path):
-                try:
-                    font_prop = FontProperties(fname=self.font_path)
-                    plt.title(
-                        title,
-                        fontproperties=font_prop,
-                        fontsize=16,
-                        pad=10,
-                        color=title_color,
-                    )
-                except Exception as e:
-                    logger.warning(f"使用自定义字体设置标题失败: {e}")
-                    plt.title(title, fontsize=16, pad=10, color=title_color)
-            else:
-                plt.title(title, fontsize=16, pad=10, color=title_color)
-
-            # 如果是深色背景，添加文字边框增强可读性
-            if self._is_dark_color(self.background_color):
-                try:
-                    # 将当前标题获取出来
-                    title_obj = ax.get_title()
-                    # 清除原标题
-                    ax.set_title("")
-                    # 重新设置带边框的标题
-                    plt.title(
-                        title,
-                        fontproperties=font_prop if "font_prop" in locals() else None,
-                        fontsize=16,
-                        pad=10,
-                        color=title_color,
-                        bbox=dict(
-                            facecolor=self.background_color,
-                            alpha=0.8,
-                            edgecolor="white",
-                            boxstyle="round,pad=0.5",
-                        ),
-                    )
-                except Exception as title_ex:
-                    logger.warning(f"设置标题边框失败: {title_ex}")
-                    # 恢复原标题
-                    if "title_obj" in locals():
-                        ax.set_title(title_obj)
-
-        # 保存图片
-        plt.savefig(
-            image_path,
-            bbox_inches="tight",
-            pad_inches=0.2,  # 减少边距
-            dpi=dpi,
-            facecolor=self.background_color,
-        )
-        plt.close(fig)
-
-        # 删除临时文件
+        
+        # 创建锁的键名
+        lock_key = f"wordcloud_{session_id}_{timestamp}"
+        
+        # 获取锁对象
+        lock = _get_lock_for_key(lock_key)
+        
+        # 尝试获取锁
+        if not lock.acquire(blocking=False):
+            logger.warning(f"已有其他线程正在生成相同的词云 {session_id}_{timestamp}，跳过本次生成")
+            
+            # 如果文件已存在，直接返回路径
+            if image_path.exists():
+                logger.info(f"使用已存在的词云图片: {image_path}")
+                return str(image_path), image_path
+                
+            # 等待一段时间看是否生成了
+            try:
+                wait_start = time.time()
+                while time.time() - wait_start < 5.0:  # 最多等待5秒
+                    time.sleep(0.5)
+                    if image_path.exists():
+                        logger.info(f"等待后找到了词云图片: {image_path}")
+                        return str(image_path), image_path
+                
+                # 如果等待超时仍未生成，则抛出异常
+                raise ValueError("等待词云生成超时，请稍后再试")
+            except Exception as e:
+                logger.error(f"等待词云生成时出错: {e}")
+                raise ValueError("词云生成被其他任务占用，请稍后再试")
+        
         try:
-            if temp_path.exists():
-                os.remove(temp_path)
+            # 生成词云
+            self.wordcloud.generate_from_frequencies(word_counts)
+
+            # 确保目录存在
+            image_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # 先保存词云图像到临时文件，避免直接操作wordcloud对象导致维度不匹配
+            temp_path = image_path.parent / f"temp_{image_path.name}"
+            self.wordcloud.to_file(str(temp_path))
+
+            # 读取保存的图像
+            wordcloud_img = np.array(Image.open(temp_path))
+
+            # 使用matplotlib创建带标题的完整图像
+            fig_width, fig_height = 10, 6.5
+            dpi = 150
+
+            # 创建带有背景色的图表
+            fig = plt.figure(
+                figsize=(fig_width, fig_height), facecolor=self.background_color, dpi=dpi
+            )
+            plt.rcParams.update({"figure.autolayout": True})
+            ax = plt.axes()
+            ax.set_facecolor(self.background_color)
+            ax.set_position([0, 0, 1, 0.9])  # 为标题留出少量空间
+
+            # 去除边框和刻度
+            plt.axis("off")
+            plt.box(False)
+            plt.tight_layout(pad=0.1)  # 减少内边距
+
+            # 绘制词云图像
+            plt.imshow(wordcloud_img, interpolation="bilinear")
+
+            # 设置标题，使用对比色
+            if title:
+                # 选择与背景相反的颜色
+                title_color = (
+                    "white" if self._is_dark_color(self.background_color) else "black"
+                )
+
+                logger.info(
+                    f"设置词云标题: {title}, 背景色: {self.background_color}, 标题颜色: {title_color}"
+                )
+
+                # 设置中文标题字体
+                if self.font_path and os.path.exists(self.font_path):
+                    try:
+                        font_prop = FontProperties(fname=self.font_path)
+                        plt.title(
+                            title,
+                            fontproperties=font_prop,
+                            fontsize=16,
+                            pad=10,
+                            color=title_color,
+                        )
+                    except Exception as e:
+                        logger.warning(f"使用自定义字体设置标题失败: {e}")
+                        plt.title(title, fontsize=16, pad=10, color=title_color)
+                else:
+                    plt.title(title, fontsize=16, pad=10, color=title_color)
+
+                # 如果是深色背景，添加文字边框增强可读性
+                if self._is_dark_color(self.background_color):
+                    try:
+                        # 将当前标题获取出来
+                        title_obj = ax.get_title()
+                        # 清除原标题
+                        ax.set_title("")
+                        # 重新设置带边框的标题
+                        plt.title(
+                            title,
+                            fontproperties=font_prop if "font_prop" in locals() else None,
+                            fontsize=16,
+                            pad=10,
+                            color=title_color,
+                            bbox=dict(
+                                facecolor=self.background_color,
+                                alpha=0.8,
+                                edgecolor="white",
+                                boxstyle="round,pad=0.5",
+                            ),
+                        )
+                    except Exception as title_ex:
+                        logger.warning(f"设置标题边框失败: {title_ex}")
+                        # 恢复原标题
+                        if "title_obj" in locals():
+                            ax.set_title(title_obj)
+
+            # 保存图片
+            plt.savefig(
+                image_path,
+                bbox_inches="tight",
+                pad_inches=0.2,  # 减少边距
+                dpi=dpi,
+                facecolor=self.background_color,
+            )
+            plt.close(fig)
+
+            # 删除临时文件
+            try:
+                if temp_path.exists():
+                    os.remove(temp_path)
+            except Exception as e:
+                logger.warning(f"删除临时文件失败: {e}")
+
+            # 添加时间戳水印
+            img = Image.open(image_path)
+            final_image = self._add_timestamp_to_image(img, timestamp)
+            final_image.save(image_path)
+
+            # 输出图片信息
+            logger.info(f"词云图片已保存至: {image_path}")
+
+            return str(image_path), image_path
         except Exception as e:
-            logger.warning(f"删除临时文件失败: {e}")
-
-        # 添加时间戳水印
-        img = Image.open(image_path)
-        final_image = self._add_timestamp_to_image(img, timestamp)
-        final_image.save(image_path)
-
-        # 输出图片信息
-        logger.info(f"词云图片已保存至: {image_path}")
-
-        return str(image_path), image_path
+            logger.error(f"生成词云时出错: {e}")
+            logger.error(traceback.format_exc())
+            raise
+        finally:
+            # 释放锁
+            lock.release()
 
     def _is_dark_color(self, color_str: str) -> bool:
         """

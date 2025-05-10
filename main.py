@@ -50,7 +50,7 @@ from . import constant as constant_module
     "CloudRank",
     "GEMILUXVII",
     "词云与排名插件 (CloudRank) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。",
-    "1.2.1",
+    "1.3.0",
     "https://github.com/GEMILUXVII/astrbot_plugin_cloudrank",
 )
 class WordCloudPlugin(Star):
@@ -1200,442 +1200,112 @@ class WordCloudPlugin(Star):
             logger.error(f"自动生成词云任务执行失败: {e}")
 
     async def daily_generate_wordcloud(self):
-        """每日生成词云的定时任务回调"""
-        import datetime
-
-        now = datetime.datetime.now()
-        local_time = now.strftime("%Y-%m-%d %H:%M:%S")
-        # --- 使用 DEBUG 级别并检查 self.debug_mode ---
-        if self.debug_mode:
-            logger.debug(f"daily_generate_wordcloud method ENTERED at {local_time}")
-
-        try:
-            daily_time = self.config.get("daily_generate_time", "23:30")
-            try:
-                hour, minute = parse_time_str(daily_time)
-                now_hour, now_minute = now.hour, now.minute
-                time_diff_minutes = abs(
-                    (now_hour * 60 + now_minute) - (hour * 60 + minute)
-                )
-
-                if self.debug_mode:
-                    logger.debug(
-                        f"Expected execution time: {hour:02d}:{minute:02d}, Actual: {now_hour:02d}:{now_minute:02d}, Difference: {time_diff_minutes} mins"
-                    )
-
-                if time_diff_minutes > 30:
-                    if self.debug_mode:  # Keep warning level but make it conditional
-                        logger.warning(
-                            f"Execution time difference is large ({time_diff_minutes} mins). Possible timezone issue, but continuing."
-                        )
-            except Exception as time_error:
-                logger.error(
-                    f"Failed to parse time info: {time_error}"
-                )  # Keep as error
-
-            date_str = format_date()
-            if self.debug_mode:
-                logger.debug(f"Current date: {date_str}. Time checks passed or logged.")
-
-            if self.wordcloud_generator is None:
-                if self.debug_mode:
-                    logger.debug(
-                        "Wordcloud generator is None. Attempting re-initialization."
-                    )
-                try:
-                    if self.debug_mode:
-                        logger.debug(
-                            "Calling asyncio.to_thread for _init_wordcloud_generator [BEFORE AWAIT]"
-                        )
-                    await asyncio.to_thread(self._init_wordcloud_generator)
-                    if self.debug_mode:
-                        logger.debug(
-                            "asyncio.to_thread for _init_wordcloud_generator [AFTER AWAIT]"
-                        )
-                    if self.wordcloud_generator is None:
-                        logger.error(
-                            "Failed to re-initialize wordcloud generator. Aborting task."
-                        )  # Keep as error
-                        return
-                    if self.debug_mode:
-                        logger.debug("Wordcloud generator re-initialized successfully.")
-                except Exception as e:
-                    logger.error(
-                        f"Exception during wordcloud generator re-initialization: {e}"
-                    )  # Keep as error
-                    import traceback
-
-                    logger.error(
-                        f"Initialization error details: {traceback.format_exc()}"
-                    )  # Keep as error
-                    return
-
-            if self.debug_mode:
-                logger.debug(
-                    "Calling asyncio.to_thread for get_active_group_sessions [BEFORE AWAIT]"
-                )
-            active_group_sessions = await asyncio.to_thread(
-                self.history_manager.get_active_group_sessions, days=1
-            )
-            if self.debug_mode:
-                logger.debug(
-                    f"asyncio.to_thread for get_active_group_sessions [AFTER AWAIT]. Found {len(active_group_sessions)} sessions: {active_group_sessions}"
-                )
-
-            if not active_group_sessions:
-                if self.debug_mode:  # Keep warning level but make it conditional
-                    logger.warning("No active group sessions found. Task ending.")
+        """
+        生成每日词云定时任务
+        """
+        logger.info("开始执行每日词云生成任务")
+        
+        # 使用任务ID创建任务锁，防止并发执行
+        task_id = "daily_wordcloud_task"
+        task_lock_file = os.path.join(self.data_dir, f"{task_id}.lock")
+        
+        # 检查锁文件是否存在
+        if os.path.exists(task_lock_file):
+            # 检查锁文件的时间
+            lock_time = os.path.getmtime(task_lock_file)
+            current_time = time.time()
+            
+            # 如果锁文件创建时间在30分钟内，说明可能有其他任务正在执行
+            if current_time - lock_time < 1800:  # 30分钟
+                logger.warning(f"每日词云生成任务可能正在进行中(pid:{os.getpid()})，跳过本次执行")
                 return
-
-            if self.enabled_groups:
-                if self.debug_mode:
-                    logger.debug(f"Enabled groups: {self.enabled_groups}")
             else:
-                if self.debug_mode:
-                    logger.debug(
-                        "No specific groups enabled, will attempt for all active."
-                    )
-            if self.debug_mode:
-                logger.debug(f"Enabled groups check done.")
-
-            processed_count = 0
-            skipped_count = 0
-            error_count = 0
-
-            for session_id in active_group_sessions:
-                if self.debug_mode:
-                    logger.debug(f"Processing session {session_id} [LOOP START]")
+                # 锁文件太旧，可能是之前的任务异常退出，删除旧锁文件
                 try:
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id}: Calling extract_group_id_from_session [BEFORE AWAIT]"
-                        )
-                    group_id = await asyncio.to_thread(
-                        self.history_manager.extract_group_id_from_session, session_id
-                    )
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id}: extract_group_id_from_session [AFTER AWAIT]. group_id: {group_id}"
-                        )
+                    os.remove(task_lock_file)
+                    logger.info(f"发现陈旧的任务锁文件，已删除")
+                except Exception as e:
+                    logger.error(f"删除陈旧的任务锁文件失败: {e}")
+                    # 如果无法删除，仍跳过本次执行
+                    return
+        
+        try:
+            # 创建锁文件
+            with open(task_lock_file, 'w') as f:
+                f.write(f"PID: {os.getpid()}, Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+                
+            # 使用一个标志来跟踪任务是否执行成功
+            task_completed = False
+                
+            try:
+                date = datetime.date.today() - datetime.timedelta(days=1)
+                logger.info(f"任务执行日期: {date}")
 
-                    if not group_id:
-                        if self.debug_mode:
-                            logger.debug(
-                                f"Session {session_id}: group_id is None. Trying util function."
-                            )
-                        from .utils import (
-                            extract_group_id_from_session as util_extract_group_id,
-                        )
+                # 获取所有启用的群组
+                enabled_groups = [
+                    g_id for g_id, cfg in self.group_configs.items() if cfg.get("enabled", False)
+                ]
+                logger.info(f"已启用词云的群组数量: {len(enabled_groups)}")
 
-                        if self.debug_mode:
-                            logger.debug(
-                                f"Session {session_id}: Calling util_extract_group_id [BEFORE AWAIT]"
-                            )
-                        group_id = await asyncio.to_thread(
-                            util_extract_group_id, session_id
-                        )
-                        if self.debug_mode:
-                            logger.debug(
-                                f"Session {session_id}: util_extract_group_id [AFTER AWAIT]. group_id: {group_id}"
-                            )
-
-                    if not group_id:
-                        if self.debug_mode:
-                            logger.debug(
-                                f"Session {session_id}: Still no group_id. Skipping."
-                            )
-                        skipped_count += 1
-                        continue
-
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id}: Group ID {group_id}. Checking if enabled."
-                        )
-                    if not is_group_enabled(group_id, self.enabled_groups):
-                        if self.debug_mode:
-                            logger.debug(
-                                f"Session {session_id}: Group {group_id} is not enabled. Skipping."
-                            )
-                        skipped_count += 1
-                        continue
-
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): Calling get_message_count_today [BEFORE AWAIT]"
-                        )
-                    message_count = await asyncio.to_thread(
-                        self.history_manager.get_message_count_today, session_id
-                    )
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): get_message_count_today [AFTER AWAIT]. Count: {message_count}"
-                        )
-
-                    min_daily_messages = self.config.get("min_daily_messages", 10)
-                    if message_count < min_daily_messages:
-                        if self.debug_mode:
-                            logger.debug(
-                                f"Session {session_id} (Group {group_id}): Message count {message_count} < {min_daily_messages}. Skipping."
-                            )
-                        skipped_count += 1
-                        continue
-
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): Calling get_todays_message_texts [BEFORE AWAIT]"
-                        )
-                    message_texts = await asyncio.to_thread(
-                        self.history_manager.get_todays_message_texts, session_id
-                    )
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): get_todays_message_texts [AFTER AWAIT]. Found {len(message_texts) if message_texts else 0} texts."
-                        )
-
-                    if not message_texts:
-                        if self.debug_mode:
-                            logger.debug(
-                                f"Session {session_id} (Group {group_id}): No message texts found. Skipping."
-                            )
-                        skipped_count += 1
-                        continue
-
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): Calling process_texts [BEFORE AWAIT]"
-                        )
-                    word_counts = await asyncio.to_thread(
-                        self.wordcloud_generator.process_texts, message_texts
-                    )
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): process_texts [AFTER AWAIT]. Found {len(word_counts) if word_counts else 0} word_counts."
-                        )
-
-                    if not word_counts:
-                        if self.debug_mode:
-                            logger.debug(
-                                f"Session {session_id} (Group {group_id}): No word counts. Skipping."
-                            )
-                        skipped_count += 1
-                        continue
-
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): Getting group name..."
-                        )
-                    group_name = f"群{group_id}"
+                # 为每个群组生成词云
+                for group_id in enabled_groups:
                     try:
-                        for platform_name in ["aiocqhttp", "qqofficial"]:
-                            platform = self.context.get_platform(platform_name)
-                            if platform and hasattr(platform, "get_group_info"):
-                                try:
-                                    if self.debug_mode:
-                                        logger.debug(
-                                            f"Session {session_id} (Group {group_id}): Calling {platform_name}.get_group_info [BEFORE AWAIT]"
-                                        )
-                                    group_info = await platform.get_group_info(group_id)
-                                    if self.debug_mode:
-                                        logger.debug(
-                                            f"Session {session_id} (Group {group_id}): {platform_name}.get_group_info [AFTER AWAIT]"
-                                        )
-                                    if group_info and "group_name" in group_info:
-                                        group_name = group_info["group_name"]
-                                        if self.debug_mode:
-                                            logger.debug(
-                                                f"Session {session_id} (Group {group_id}): Got group name: {group_name}"
-                                            )
-                                        break
-                                except Exception as platform_error:
-                                    if self.debug_mode:
-                                        logger.debug(
-                                            f"Session {session_id} (Group {group_id}): Failed to get group info from {platform_name}: {platform_error}"
-                                        )
-                                    continue
-                    except Exception as e:
-                        if self.debug_mode:
-                            logger.debug(
-                                f"Session {session_id} (Group {group_id}): Failed to get group name: {e}"
-                            )
-
-                    title_template = self.config.get(
-                        "daily_summary_title", "{date} {group_name} 今日词云"
-                    )
-                    title = title_template.format(date=date_str, group_name=group_name)
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): Title: '{title}'. Calling generate_wordcloud [BEFORE AWAIT]"
-                        )
-
-                    # generate_wordcloud is wrapped in to_thread below, keep internal logs
-                    image_path, path_obj = await asyncio.to_thread(
-                        self.wordcloud_generator.generate_wordcloud,
-                        word_counts,
-                        f"daily_{session_id.replace(':', '_')}",
-                        title=title,
-                    )
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): generate_wordcloud [AFTER AWAIT]. Image path: {image_path}"
-                        )
-
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): Sending image. Checking path {path_obj}"
-                        )
-                    if not os.path.exists(str(path_obj)):
-                        logger.error(
-                            f"Session {session_id} (Group {group_id}): Image file does not exist: {path_obj}. Cannot send."
-                        )  # Keep as error
-                        error_count += 1
-                        continue
-
-                    message_to_send = f"{title}\n今天共有{message_count}条消息。"
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): Calling scheduler.send_to_session [BEFORE AWAIT] for target {session_id}"
-                        )
-                    sendable_session_id = self._get_astrbot_sendable_session_id(
-                        session_id
-                    )
-                    send_success = await self.scheduler.send_to_session(
-                        sendable_session_id, message_to_send, str(path_obj)
-                    )
-                    if self.debug_mode:
-                        logger.debug(
-                            f"Session {session_id} (Group {group_id}): scheduler.send_to_session [AFTER AWAIT]. Success: {send_success}"
-                        )
-
-                    # 如果词云发送成功并且配置中启用了用户排行榜功能，则生成并发送排行榜
-                    if send_success and self.config.get("show_user_ranking", True):
-                        try:
-                            if self.debug_mode:
-                                logger.debug(
-                                    f"Session {session_id} (Group {group_id}): Generating user ranking"
-                                )
-
-                            # 获取用户总数
-                            total_users = await asyncio.to_thread(
-                                self.history_manager.get_total_users_today, session_id
-                            )
-
-                            # 获取活跃用户排名
-                            ranking_limit = self.config.get("ranking_user_count", 5)
-                            active_users = await asyncio.to_thread(
-                                self.history_manager.get_active_users,
-                                session_id,
-                                days=1,
-                                limit=ranking_limit,
-                            )
-
-                            if active_users and len(active_users) > 0:
-                                # 获取排行榜奖牌
-                                medals_str = self.config.get(
-                                    "ranking_medals", "🥇,🥈,🥉,🏅,🏅"
-                                )
-                                medals = medals_str.split(",")
-                                if len(medals) < ranking_limit:
-                                    # 如果配置的奖牌不够，用最后一个填充
-                                    medals.extend(
-                                        [medals[-1]] * (ranking_limit - len(medals))
-                                    )
-
-                                # 生成排行榜消息
-                                ranking_message = [
-                                    f"📊 本群 {total_users} 位朋友共产生 {message_count} 条发言",
-                                    f"👀 看下有没有你感兴趣的关键词?",
-                                    f"\n活跃用户排行榜:",
+                        logger.info(f"为群组 {group_id} 生成词云")
+                        result = self.wc_generator.generate_daily_wordcloud(group_id, date)
+                        
+                        if result[0]:  # 生成成功
+                            img_path = result[1]
+                            logger.info(f"成功生成群组 {group_id} 的词云图片: {img_path}")
+                            
+                            # 检查是否需要发送到群组
+                            group_config = self.group_configs.get(group_id, {})
+                            if group_config.get("auto_send", False):
+                                chat_id = group_id  # 假设group_id就是聊天ID
+                                
+                                # 构建消息链
+                                message = [
+                                    Comp.Plain(f"【每日词云】{date} 热词统计"),
+                                    Comp.Plain("\n"),
+                                    Comp.Image(path=img_path)
                                 ]
-
-                                # 添加前N名用户
-                                for i, (user_id, user_name, count) in enumerate(
-                                    active_users
-                                ):
-                                    medal = medals[i] if i < len(medals) else "🏅"
-                                    ranking_message.append(
-                                        f"{medal} {user_name} 贡献: {count}"
-                                    )
-
-                                # 添加感谢信息
-                                ranking_message.append(
-                                    "\n🎉 感谢这些朋友今天的分享! 🎉"
+                                
+                                logger.info(f"准备向群组 {chat_id} 发送词云图片")
+                                send_result = await self.context.api.send_group_msg(
+                                    group_id=chat_id,
+                                    message=MessageChain(message)
                                 )
-
-                                # 发送排行榜
-                                if self.debug_mode:
-                                    logger.debug(
-                                        f"Session {session_id} (Group {group_id}): Sending user ranking"
-                                    )
-                                # session_id for sending ranking is the same sendable_session_id used for word cloud image
-                                await self.scheduler.send_to_session(
-                                    sendable_session_id, "\n".join(ranking_message)
-                                )
-                                if self.debug_mode:
-                                    logger.debug(
-                                        f"Session {session_id} (Group {group_id}): User ranking sent successfully"
-                                    )
-                        except Exception as ranking_error:
-                            logger.error(
-                                f"为会话 {session_id} (群 {group_id}) 生成用户排行榜失败: {ranking_error}"
-                            )
-                            if self.debug_mode:
-                                import traceback
-
-                                logger.debug(
-                                    f"排行榜错误详情: {traceback.format_exc()}"
-                                )
-
-                    if send_success:
-                        if self.debug_mode:
-                            logger.debug(
-                                f"Successfully sent word cloud to group {group_id} (Session: {session_id})"
-                            )
-                        processed_count += 1
-                    else:
-                        if (
-                            self.debug_mode
-                        ):  # Keep warning level but make it conditional
-                            logger.warning(
-                                f"Failed to send word cloud to group {group_id} (Session: {session_id}). Check scheduler logs."
-                            )
-                        error_count += 1
-
-                except Exception as e_loop:
-                    logger.error(
-                        f"Exception in loop for session {session_id}: {e_loop}"
-                    )  # Keep as error
-                    import traceback
-
-                    logger.error(
-                        f"Loop error details: {traceback.format_exc()}"
-                    )  # Keep as error
-                    error_count += 1
-                    continue
-                if self.debug_mode:
-                    logger.debug(
-                        f"Session {session_id} processing finished. Sleeping for 2 seconds."
-                    )
-                await asyncio.sleep(2)
-
-            logger.info(
-                f"每日词云生成任务执行完毕: 成功 {processed_count}, 跳过 {skipped_count}, 失败 {error_count}"
-            )  # Concise final summary for INFO level
-            if self.debug_mode:  # Detailed summary only in debug mode
-                logger.debug(
-                    f"Finished processing all sessions. Processed: {processed_count}, Skipped: {skipped_count}, Errors: {error_count}"
-                )
-
-        except Exception as e_global:
-            logger.error(
-                f"Global exception in daily_generate_wordcloud: {e_global}"
-            )  # Keep as error
-            import traceback
-
-            logger.error(
-                f"Global error details: {traceback.format_exc()}"
-            )  # Keep as error
-        if self.debug_mode:
-            logger.debug(f"daily_generate_wordcloud method EXITED.")
+                                
+                                if send_result and send_result.get("message_id"):
+                                    logger.info(f"成功向群组 {chat_id} 发送词云图片")
+                                else:
+                                    logger.warning(f"向群组 {chat_id} 发送词云图片失败: {send_result}")
+                        else:
+                            logger.warning(f"为群组 {group_id} 生成词云失败: {result[1]}")
+                            
+                    except Exception as e:
+                        logger.error(f"处理群组 {group_id} 的词云时出错: {e}")
+                        logger.error(traceback.format_exc())
+                
+                # 标记任务完成
+                task_completed = True
+                logger.info("成功完成每日词云生成任务")
+                
+            except Exception as e:
+                logger.error(f"执行每日词云生成任务时出错: {e}")
+                logger.error(traceback.format_exc())
+                
+            # 更新锁文件状态或删除锁文件
+            if task_completed:
+                try:
+                    # 成功执行后删除锁文件
+                    os.remove(task_lock_file)
+                    logger.info("删除任务锁文件")
+                except Exception as e:
+                    logger.error(f"删除任务锁文件失败: {e}")
+            
+        except Exception as e:
+            logger.error(f"创建任务锁时出错: {e}")
+            logger.error(traceback.format_exc())
 
     @wordcloud_group.command("force_daily")
     async def force_daily_command(self, event: AstrMessageEvent):
@@ -1659,13 +1329,46 @@ class WordCloudPlugin(Star):
             logger.error(f"错误详情: {traceback.format_exc()}")
             yield event.plain_result(f"强制执行每日词云生成任务失败: {str(e)}")
 
-    async def terminate(self):
-        """插件终止时的清理工作"""
-        # 停止定时任务调度器
-        if hasattr(self, "scheduler"):
-            self.scheduler.stop()
-
-        logger.info("WordCloud插件已终止")
+    def terminate(self):
+        """
+        插件终止时的清理操作
+        """
+        try:
+            logger.info("WordCloud plugin terminating...")
+            
+            # 确保调度器被正确停止
+            if hasattr(self, 'scheduler') and self.scheduler is not None:
+                logger.info("Stopping scheduler...")
+                try:
+                    self.scheduler.stop()
+                    logger.info("Scheduler stopped successfully")
+                except Exception as e:
+                    logger.error(f"Error stopping scheduler: {e}")
+                
+                # 移除调度器引用
+                self.scheduler = None
+            
+            # 确保历史管理器被正确关闭
+            if hasattr(self, 'history_manager') and self.history_manager is not None:
+                logger.info("Closing history manager...")
+                try:
+                    self.history_manager.close()
+                    logger.info("History manager closed successfully")
+                except Exception as e:
+                    logger.error(f"Error closing history manager: {e}")
+                
+                # 移除历史管理器引用
+                self.history_manager = None
+            
+            # 如果有事件循环引用，确保它被清理
+            if hasattr(self, 'main_loop') and self.main_loop is not None:
+                logger.info("Cleaning up main loop reference")
+                self.main_loop = None
+            
+            logger.info("WordCloud plugin terminated")
+        except Exception as e:
+            logger.error(f"Error during plugin termination: {e}")
+            logger.error(traceback.format_exc())
 
     async def _check_natural_language_keywords(self, event: AstrMessageEvent):
         """

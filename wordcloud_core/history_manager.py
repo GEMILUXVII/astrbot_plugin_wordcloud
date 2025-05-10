@@ -6,6 +6,7 @@ import json
 import time
 import datetime
 from typing import List, Dict, Any, Optional, Tuple, Set
+import traceback
 
 from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent
@@ -713,3 +714,32 @@ class HistoryManager:
         except Exception as e:
             logger.error(f"从会话ID提取群号失败: {e}")
             return None
+
+    def close(self):
+        """
+        关闭历史管理器，释放资源
+        """
+        logger.info("关闭历史管理器...")
+        
+        try:
+            # 关闭数据库连接
+            if hasattr(self, "connection") and self.connection is not None:
+                try:
+                    self.connection.close()
+                    logger.info("数据库连接已关闭")
+                except Exception as e:
+                    logger.error(f"关闭数据库连接时出错: {e}")
+            
+            # 清理数据和缓存
+            self.word_data = {}
+            self.cached_word_counts = {}
+            logger.info("历史数据缓存已清理")
+            
+            # 允许垃圾回收
+            self.connection = None
+            self.cursor = None
+            
+            logger.info("历史管理器已成功关闭")
+        except Exception as e:
+            logger.error(f"关闭历史管理器时出错: {e}")
+            logger.error(traceback.format_exc())
