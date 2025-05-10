@@ -3,9 +3,14 @@ AstrBot 词云生成插件
 """
 
 import os
+import sys
+import time
+import datetime
+import traceback
 import asyncio
 from typing import List, Dict, Any, Optional, Tuple, Set
 from pathlib import Path
+import importlib
 
 from astrbot.api import logger
 from astrbot.api import AstrBotConfig
@@ -245,8 +250,6 @@ class WordCloudPlugin(Star):
 
         except Exception as e:
             logger.error(f"准备资源文件时出错: {e}")
-            import traceback
-
             logger.error(f"错误详情: {traceback.format_exc()}")
 
     def _load_group_configs(self) -> None:
@@ -295,9 +298,7 @@ class WordCloudPlugin(Star):
             logger.info("WordCloud插件初始化完成")
         except Exception as e:
             logger.error(f"WordCloud插件初始化失败: {e}")
-            # 尝试记录详细的堆栈跟踪
-            import traceback
-
+            # 记录详细的堆栈跟踪
             logger.error(f"错误详情: {traceback.format_exc()}")
 
     def _init_wordcloud_generator(self):
@@ -479,8 +480,6 @@ class WordCloudPlugin(Star):
 
                 except Exception as daily_task_error:
                     logger.error(f"添加每日词云生成任务失败: {daily_task_error}")
-                    import traceback
-
                     logger.error(f"任务添加错误详情: {traceback.format_exc()}")
             else:
                 logger.info("每日生成词云功能已禁用")
@@ -504,8 +503,6 @@ class WordCloudPlugin(Star):
 
         except Exception as e:
             logger.error(f"设置定时任务失败: {e}")
-            import traceback
-
             logger.error(f"设置定时任务错误详情: {traceback.format_exc()}")
 
     @filter.event_message_type(EventMessageType.ALL)
@@ -631,20 +628,12 @@ class WordCloudPlugin(Star):
                             f"保存消息到历史记录失败 - 会话ID: {session_id}, 可能是数据库操作失败"
                         )
             except Exception as save_error:
-                # 导入traceback模块
-                try:
-                    import traceback
-
-                    error_stack = traceback.format_exc()
-                    logger.error(
-                        f"保存消息过程中发生异常: {save_error}, 错误类型: {type(save_error).__name__}"
-                    )
-                    logger.error(f"错误堆栈: {error_stack}")
-                except:
-                    # 如果traceback也出错，使用简单日志
-                    logger.error(
-                        f"保存消息过程中发生异常: {save_error}, 无法获取详细堆栈"
-                    )
+                # 记录错误详情
+                error_stack = traceback.format_exc()
+                logger.error(
+                    f"保存消息过程中发生异常: {save_error}, 错误类型: {type(save_error).__name__}"
+                )
+                logger.error(f"错误堆栈: {error_stack}")
 
             # 继续处理事件，不阻断其他插件
             return True
@@ -731,8 +720,6 @@ class WordCloudPlugin(Star):
 
         except Exception as e:
             logger.error(f"生成词云失败: {e}")
-            import traceback
-
             logger.error(f"生成词云失败详细信息: {traceback.format_exc()}")
             yield event.plain_result(f"生成词云失败: {str(e)}")
 
@@ -980,14 +967,10 @@ class WordCloudPlugin(Star):
                         f"为会话 {target_session_id_for_query} (群 {group_id_val}) 生成用户排行榜失败: {ranking_error}"
                     )
                     if self.debug_mode:
-                        import traceback
-
                         logger.debug(f"排行榜错误详情: {traceback.format_exc()}")
 
         except Exception as e:
             logger.error(f"生成今日词云失败: {e}")
-            import traceback
-
             logger.error(f"生成今日词云失败详细信息: {traceback.format_exc()}")
             yield event.plain_result(f"生成今日词云失败: {str(e)}")
 
@@ -1324,8 +1307,6 @@ class WordCloudPlugin(Star):
             yield event.plain_result("每日词云生成任务执行完毕，请查看日志或群聊消息")
         except Exception as e:
             logger.error(f"强制执行每日词云生成任务失败: {e}")
-            import traceback
-
             logger.error(f"错误详情: {traceback.format_exc()}")
             yield event.plain_result(f"强制执行每日词云生成任务失败: {str(e)}")
 
