@@ -40,6 +40,7 @@ from .utils import (
     parse_group_list,
     is_group_enabled,
     parse_time_str,
+    extract_group_id_from_session,
 )
 from .wordcloud_core.generator import WordCloudGenerator
 from .wordcloud_core.history_manager import HistoryManager
@@ -55,7 +56,7 @@ from . import constant as constant_module
     "CloudRank",
     "GEMILUXVII",
     "词云与排名插件 (CloudRank) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。",
-    "1.3.1",
+    "1.3.2",
     "https://github.com/GEMILUXVII/astrbot_plugin_cloudrank",
 )
 class WordCloudPlugin(Star):
@@ -64,9 +65,6 @@ class WordCloudPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig = None):
         super().__init__(context)
         self.config = config
-        
-        # 添加初始化标志
-        self._initialized = False
 
         logger.info("正在初始化词云插件...")
 
@@ -74,18 +72,12 @@ class WordCloudPlugin(Star):
         self.debug_mode = self.config.get("debug_mode", False)
         if self.debug_mode:
             logger.warning("WordCloud插件调试模式已启用，将输出详细日志。")
-            # 确保DEBUG级别的日志能够显示
-            try:
-                import logging
-                logger.setLevel(logging.DEBUG)
-            except Exception as e:
-                logger.warning(f"设置日志级别失败: {e}")
         # -----------------------
 
         # --- 获取主事件循环 ---
         try:
             self.main_loop = asyncio.get_running_loop()
-            logger.debug(
+            logger.info(
                 f"WordCloudPlugin: Successfully got running main loop ID: {id(self.main_loop)}"
             )
         except RuntimeError:
@@ -93,29 +85,9 @@ class WordCloudPlugin(Star):
                 "WordCloudPlugin: No running loop found via get_running_loop(), trying get_event_loop()."
             )
             self.main_loop = asyncio.get_event_loop()
-            logger.debug(
+            logger.info(
                 f"WordCloudPlugin: Got loop via get_event_loop() ID: {id(self.main_loop)}"
             )
-        # ---------------------
-
-        # 清理旧的禁用群列表配置项（如果存在）
-        if (
-            self.config
-            and hasattr(self.config, "__contains__")
-            and "disabled_group_list" in self.config
-        ):
-            try:
-                # 删除旧配置项
-                if hasattr(self.config, "__delitem__"):
-                    del self.config["disabled_group_list"]
-                    # 保存配置
-                    if hasattr(self.config, "save_config") and callable(
-                        getattr(self.config, "save_config")
-                    ):
-                        self.config.save_config()
-                        logger.info("已清理旧的禁用群列表配置项")
-            except Exception as e:
-                logger.warning(f"清理旧配置项失败: {e}")
 
         # 设置数据目录为AstrBot官方推荐的数据存储路径
         # 通过StarTools获取官方数据存储路径
@@ -147,14 +119,14 @@ class WordCloudPlugin(Star):
 
         # 现在可以初始化历史记录管理器
         self.history_manager = HistoryManager(context)
-        logger.debug("历史记录管理器初始化完成")
+        logger.info("历史记录管理器初始化完成")
 
         # --- 将主循环和调试模式传递给 Scheduler ---
         self.scheduler = TaskScheduler(
             context, main_loop=self.main_loop, debug_mode=self.debug_mode
         )
         # -----------------------------------------
-        logger.debug("任务调度器初始化完成")
+        logger.info("任务调度器初始化完成")
 
         # 初始化词云生成器变量，确保不为None
         self.wordcloud_generator = None
@@ -235,7 +207,7 @@ class WordCloudPlugin(Star):
                 import shutil
 
                 shutil.copy(plugin_font_path, data_font_path)
-                logger.debug(f"已复制字体文件到数据目录: {data_font_path}")
+                logger.info(f"已复制字体文件到数据目录: {data_font_path}")
 
             # 复制停用词文件
             plugin_stopwords_path = constant_module.PLUGIN_DIR / "stop_words.txt"
@@ -245,7 +217,7 @@ class WordCloudPlugin(Star):
                 import shutil
 
                 shutil.copy(plugin_stopwords_path, data_stopwords_path)
-                logger.debug(f"已复制停用词文件到数据目录: {data_stopwords_path}")
+                logger.info(f"已复制停用词文件到数据目录: {data_stopwords_path}")
 
             # 如果字体文件和停用词文件都不存在，创建基本的文件确保插件仍能工作
             if not data_font_path.exists() and not plugin_font_path.exists():
@@ -255,10 +227,12 @@ class WordCloudPlugin(Star):
                 # 创建一个基本的停用词文件
                 with open(data_stopwords_path, "w", encoding="utf-8") as f:
                     f.write("的\n了\n我\n你\n在\n是\n有\n和\n就\n不")
-                logger.debug(f"已创建基本停用词文件: {data_stopwords_path}")
+                logger.info(f"已创建基本停用词文件: {data_stopwords_path}")
 
         except Exception as e:
             logger.error(f"准备资源文件时出错: {e}")
+            import traceback
+
             logger.error(f"错误详情: {traceback.format_exc()}")
 
     def _load_group_configs(self) -> None:
@@ -268,9 +242,9 @@ class WordCloudPlugin(Star):
             enabled_groups_str = self.config.get("enabled_group_list", "")
             self.enabled_groups = parse_group_list(enabled_groups_str)
 
-            logger.debug(f"词云功能已启用的群数量: {len(self.enabled_groups)}")
+            logger.info(f"词云功能已启用的群数量: {len(self.enabled_groups)}")
             if not self.enabled_groups:
-                logger.debug("未指定启用群列表，所有群都会启用词云功能")
+                logger.info("未指定启用群列表，所有群都会启用词云功能")
         except Exception as e:
             logger.error(f"加载群聊配置失败: {e}")
             # 设置为空集合，表示默认全部启用
@@ -278,11 +252,6 @@ class WordCloudPlugin(Star):
 
     async def initialize(self):
         """初始化插件"""
-        # 防止重复初始化
-        if self._initialized:
-            logger.debug("WordCloud插件已经初始化过，跳过重复初始化")
-            return
-            
         try:
             # 如果之前初始化失败，再次尝试初始化词云生成器
             if self.wordcloud_generator is None:
@@ -290,8 +259,8 @@ class WordCloudPlugin(Star):
                 # 初始化词云生成器
                 self._init_wordcloud_generator()
 
-            logger.debug("设置定时任务...")
-            # 设置定时任务，但不重复启动调度器
+            logger.info("设置定时任务...")
+            # 设置并启动定时任务
             self._setup_scheduled_tasks()
 
             # 输出状态信息
@@ -310,11 +279,11 @@ class WordCloudPlugin(Star):
                 logger.error(f"获取历史消息统计失败: {e}")
 
             logger.info("WordCloud插件初始化完成")
-            # 设置初始化完成标志
-            self._initialized = True
         except Exception as e:
             logger.error(f"WordCloud插件初始化失败: {e}")
-            # 记录详细的堆栈跟踪
+            # 尝试记录详细的堆栈跟踪
+            import traceback
+
             logger.error(f"错误详情: {traceback.format_exc()}")
 
     def _init_wordcloud_generator(self):
@@ -344,15 +313,15 @@ class WordCloudPlugin(Star):
                     / "fonts"
                     / os.path.basename(font_path)
                 )
-                if data_font_path.exists():
+                if os.path.exists(data_font_path):
                     font_path = str(data_font_path)
-                    logger.debug(f"使用数据目录中的字体: {font_path}")
+                    logger.info(f"使用数据目录中的字体: {font_path}")
                 else:
                     # 如果数据目录中不存在，则检查插件目录
                     plugin_font_path = constant_module.PLUGIN_DIR / font_path
-                    if plugin_font_path.exists():
+                    if os.path.exists(plugin_font_path):
                         font_path = str(plugin_font_path)
-                        logger.debug(f"使用插件目录中的字体: {font_path}")
+                        logger.info(f"使用插件目录中的字体: {font_path}")
 
         # 获取停用词文件路径
         stop_words_file = self.config.get("stop_words_file", "stop_words.txt")
@@ -365,15 +334,15 @@ class WordCloudPlugin(Star):
                 / "resources"
                 / os.path.basename(stop_words_file)
             )
-            if data_stopwords_path.exists():
+            if os.path.exists(data_stopwords_path):
                 stop_words_file = str(data_stopwords_path)
-                logger.debug(f"使用数据目录中的停用词文件: {stop_words_file}")
+                logger.info(f"使用数据目录中的停用词文件: {stop_words_file}")
             else:
                 # 如果数据目录中不存在，则检查插件目录
                 plugin_stopwords_path = constant_module.PLUGIN_DIR / stop_words_file
-                if plugin_stopwords_path.exists():
+                if os.path.exists(plugin_stopwords_path):
                     stop_words_file = str(plugin_stopwords_path)
-                    logger.debug(f"使用插件目录中的停用词文件: {stop_words_file}")
+                    logger.info(f"使用插件目录中的停用词文件: {stop_words_file}")
 
         # 初始化词云生成器
         self.wordcloud_generator = WordCloudGenerator(
@@ -388,7 +357,7 @@ class WordCloudPlugin(Star):
             shape=shape,
         )
 
-        logger.debug("词云生成器初始化完成")
+        logger.info("词云生成器初始化完成")
 
     def _setup_scheduled_tasks(self):
         """设置定时任务"""
@@ -398,7 +367,7 @@ class WordCloudPlugin(Star):
             if auto_generate_enabled:
                 # 获取cron表达式
                 cron_expression = self.config.get("auto_generate_cron", "0 20 * * *")
-                logger.debug(f"自动生成词云cron表达式: {cron_expression}")
+                logger.info(f"自动生成词云cron表达式: {cron_expression}")
 
                 # 兼容旧版本的6字段cron格式（带秒的格式）
                 # 如果是6字段格式（0 0 20 * * *），转换为5字段格式（0 20 * * *）
@@ -407,7 +376,7 @@ class WordCloudPlugin(Star):
                     if len(fields) == 6:
                         # 去掉秒字段，只保留后5个字段
                         cron_expression = " ".join(fields[1:])
-                        logger.debug(
+                        logger.info(
                             f"转换6字段cron表达式为5字段: {' '.join(fields)} -> {cron_expression}"
                         )
 
@@ -418,11 +387,11 @@ class WordCloudPlugin(Star):
                         callback=self.auto_generate_wordcloud,
                         task_id="auto_generate_wordcloud",
                     )
-                    logger.debug(f"已添加自动生成词云任务，执行时间: {cron_expression}")
+                    logger.info(f"已添加自动生成词云任务，执行时间: {cron_expression}")
                 except Exception as auto_task_error:
                     logger.error(f"添加自动生成词云任务失败: {auto_task_error}")
             else:
-                logger.debug("自动生成词云功能已禁用")
+                logger.info("自动生成词云功能已禁用")
 
             # 检查是否启用每日生成功能
             daily_generate_enabled = self.config.get("daily_generate_enabled", True)
@@ -432,7 +401,7 @@ class WordCloudPlugin(Star):
                 daily_cron = time_str_to_cron(daily_time)
 
                 # 检查生成的cron是否有效
-                logger.debug(
+                logger.info(
                     f"每日词云生成时间: {daily_time}, 转换为cron表达式: {daily_cron}"
                 )
 
@@ -443,7 +412,7 @@ class WordCloudPlugin(Star):
 
                     # 解析时间字符串
                     hour, minute = parse_time_str(daily_time)
-                    logger.debug(f"每日词云设置为 {hour:02d}:{minute:02d} 执行")
+                    logger.info(f"每日词云设置为 {hour:02d}:{minute:02d} 执行")
 
                     # 验证cron表达式
                     if not croniter.is_valid(daily_cron):
@@ -456,7 +425,7 @@ class WordCloudPlugin(Star):
                     base = datetime.datetime.now()
                     cron = croniter(daily_cron, base)
                     next_run = cron.get_next(datetime.datetime)
-                    logger.debug(
+                    logger.info(
                         f"每日词云下次执行时间: {next_run.strftime('%Y-%m-%d %H:%M:%S')}"
                     )
 
@@ -464,7 +433,7 @@ class WordCloudPlugin(Star):
                     time_diff = next_run - base
                     hours, remainder = divmod(time_diff.total_seconds(), 3600)
                     minutes, seconds = divmod(remainder, 60)
-                    logger.debug(
+                    logger.info(
                         f"距离下次执行还有: {int(hours)}小时{int(minutes)}分钟{int(seconds)}秒"
                     )
 
@@ -472,7 +441,7 @@ class WordCloudPlugin(Star):
                     import time
 
                     timezone_offset = -time.timezone // 3600  # 转换为小时
-                    logger.debug(
+                    logger.info(
                         f"系统时区信息: UTC{'+' if timezone_offset >= 0 else ''}{timezone_offset}"
                     )
 
@@ -488,7 +457,7 @@ class WordCloudPlugin(Star):
                     )
 
                     if task_added:
-                        logger.debug(
+                        logger.info(
                             f"已成功添加每日词云生成任务，执行时间: {daily_time}({daily_cron})"
                         )
                     else:
@@ -496,30 +465,48 @@ class WordCloudPlugin(Star):
 
                 except Exception as daily_task_error:
                     logger.error(f"添加每日词云生成任务失败: {daily_task_error}")
+                    import traceback
+
                     logger.error(f"任务添加错误详情: {traceback.format_exc()}")
             else:
-                logger.debug("每日生成词云功能已禁用")
+                logger.info("每日生成词云功能已禁用")
 
-            # 启动调度器 (如果尚未启动)
-            if not getattr(self.scheduler, "running", False):
-                self.scheduler.start()
-                logger.debug("定时任务调度器已启动")
-                
-                # 输出当前注册的所有任务信息（只在调度器首次启动时输出）
-                tasks = getattr(self.scheduler, "tasks", {})
-                if tasks:
-                    logger.info(f"当前注册的定时任务数量: {len(tasks)}")
-                    for task_id, task_info in tasks.items():
-                        if isinstance(task_info, dict) and "next_run" in task_info:
-                            next_time = time.strftime(
-                                "%Y-%m-%d %H:%M:%S", time.localtime(task_info["next_run"])
-                            )
-                            logger.debug(f"任务 '{task_id}' 下次执行时间: {next_time}")
-                else:
-                    logger.info("未找到任何注册的定时任务")
+            # 启动调度器
+            logger.info("准备启动定时任务调度器...")
+            self.scheduler.start()
+            logger.info("定时任务调度器已启动")
+
+            # 输出当前注册的所有任务信息
+            tasks = getattr(self.scheduler, "tasks", {})
+            if tasks:
+                logger.info(f"当前注册的定时任务数量: {len(tasks)}")
+                for task_id, task_info in tasks.items():
+                    if isinstance(task_info, dict) and "next_run" in task_info:
+                        next_time = time.strftime(
+                            "%Y-%m-%d %H:%M:%S", time.localtime(task_info["next_run"])
+                        )
+                        logger.info(f"任务 '{task_id}' 下次执行时间: {next_time}")
+
+                        # 验证回调函数
+                        if "callback" in task_info:
+                            callback = task_info["callback"]
+                            if callback:
+                                logger.info(
+                                    f"任务 '{task_id}' 回调函数: {callback.__name__ if hasattr(callback, '__name__') else str(callback)}"
+                                )
+                            else:
+                                logger.warning(f"任务 '{task_id}' 回调函数为空")
+                    else:
+                        logger.warning(
+                            f"任务 '{task_id}' 信息格式不正确或缺少next_run字段"
+                        )
+            else:
+                logger.warning("未找到任何注册的定时任务")
 
         except Exception as e:
             logger.error(f"设置定时任务失败: {e}")
+            import traceback
+
             logger.error(f"设置定时任务错误详情: {traceback.format_exc()}")
 
     @filter.event_message_type(EventMessageType.ALL)
@@ -645,12 +632,20 @@ class WordCloudPlugin(Star):
                             f"保存消息到历史记录失败 - 会话ID: {session_id}, 可能是数据库操作失败"
                         )
             except Exception as save_error:
-                # 记录错误详情
-                error_stack = traceback.format_exc()
-                logger.error(
-                    f"保存消息过程中发生异常: {save_error}, 错误类型: {type(save_error).__name__}"
-                )
-                logger.error(f"错误堆栈: {error_stack}")
+                # 导入traceback模块
+                try:
+                    import traceback
+
+                    error_stack = traceback.format_exc()
+                    logger.error(
+                        f"保存消息过程中发生异常: {save_error}, 错误类型: {type(save_error).__name__}"
+                    )
+                    logger.error(f"错误堆栈: {error_stack}")
+                except:
+                    # 如果traceback也出错，使用简单日志
+                    logger.error(
+                        f"保存消息过程中发生异常: {save_error}, 无法获取详细堆栈"
+                    )
 
             # 继续处理事件，不阻断其他插件
             return True
@@ -737,6 +732,8 @@ class WordCloudPlugin(Star):
 
         except Exception as e:
             logger.error(f"生成词云失败: {e}")
+            import traceback
+
             logger.error(f"生成词云失败详细信息: {traceback.format_exc()}")
             yield event.plain_result(f"生成词云失败: {str(e)}")
 
@@ -934,51 +931,66 @@ class WordCloudPlugin(Star):
             )
 
             # 如果配置中启用了用户排行榜功能，则生成并发送排行榜
-            if self.config.get("show_user_ranking", True):
+            show_ranking_config = self.config.get("show_user_ranking", True)
+            logger.info(f"排行榜配置 show_user_ranking: {show_ranking_config}")
+
+            if show_ranking_config:
                 try:
-                    # 获取用户总数 (get_total_users_today 已经是准确的数据库查询)
+                    logger.info(
+                        f"开始为会话 {target_session_id_for_query} 生成用户排行榜"
+                    )
                     total_users = self.history_manager.get_total_users_today(
                         target_session_id_for_query
                     )
+                    logger.info(f"本日总参与用户数: {total_users}")
 
-                    # 获取活跃用户排名 (get_active_users 已经是准确的数据库查询)
                     ranking_limit = self.config.get("ranking_user_count", 5)
+                    logger.info(f"排行榜显示数量上限: {ranking_limit}")
                     active_users = self.history_manager.get_active_users(
                         target_session_id_for_query, days=1, limit=ranking_limit
                     )
-
+                    logger.info(
+                        f"获取到活跃用户数量: {len(active_users) if active_users else 0}"
+                    )
                     if active_users and len(active_users) > 0:
-                        # 获取排行榜奖牌
+                        ranking_text_lines = []
+                        ranking_text_lines.append(
+                            f"本群 {total_users} 位朋友共产生 {actual_total_messages_today} 条发言"
+                        )
+                        ranking_text_lines.append("👀 看下有没有你感兴趣的关键词?")
+                        ranking_text_lines.append("")  # Blank line
+
+                        ranking_text_lines.append("活跃用户排行榜:")
+
                         medals_str = self.config.get("ranking_medals", "🥇,🥈,🥉,🏅,🏅")
-                        medals = medals_str.split(",")
-                        if len(medals) < ranking_limit:
-                            # 如果配置的奖牌不够，用最后一个填充
-                            medals.extend([medals[-1]] * (ranking_limit - len(medals)))
+                        medals = [m.strip() for m in medals_str.split(",")]
 
-                        # 生成排行榜消息
-                        ranking_message = [
-                            f"📊 本群 {total_users} 位朋友共产生 {actual_total_messages_today} 条发言",
-                            f"👀 看下有没有你感兴趣的关键词?",
-                            f"\n活跃用户排行榜:",
-                        ]
-
-                        # 添加前N名用户
                         for i, (user_id, user_name, count) in enumerate(active_users):
-                            medal = medals[i] if i < len(medals) else "🏅"
-                            ranking_message.append(f"{medal} {user_name} 贡献: {count}")
-
-                        # 添加感谢信息
-                        ranking_message.append("\n🎉 感谢这些朋友今天的分享! 🎉")
-
-                        # 发送排行榜
-                        sendable_ranking_session_id = (
-                            self._get_astrbot_sendable_session_id(
-                                target_session_id_for_query
+                            medal = medals[i] if i < len(medals) else medals[-1]
+                            ranking_text_lines.append(
+                                f"{medal} {user_name} 贡献: {count} 条"
                             )
+
+                        ranking_text_lines.append("")  # Blank line
+                        ranking_text_lines.append("🎉 感谢这些朋友今天的分享! 🎉")
+
+                        final_ranking_str = "\n".join(ranking_text_lines)
+                        sendable_session_id = self._get_astrbot_sendable_session_id(
+                            target_session_id_for_query
                         )
-                        await self.scheduler.send_to_session(
-                            sendable_ranking_session_id, "\n".join(ranking_message)
+                        logger.info(f"准备发送排行榜到会话: {sendable_session_id}")
+                        ranking_msg_chain = MessageChain(
+                            [Comp.Plain(final_ranking_str)]
                         )
+                        await self.context.send_message(
+                            sendable_session_id, ranking_msg_chain
+                        )
+                        logger.info(f"用户排行榜已成功发送到 {sendable_session_id}")
+                    else:
+                        logger.info(
+                            f"没有活跃用户数据可用于生成排行榜，或活跃用户数为0。跳过排行榜发送。"
+                        )
+
                 except Exception as ranking_error:
                     logger.error(
                         f"为会话 {target_session_id_for_query} (群 {group_id_val}) 生成用户排行榜失败: {ranking_error}"
@@ -988,6 +1000,8 @@ class WordCloudPlugin(Star):
 
         except Exception as e:
             logger.error(f"生成今日词云失败: {e}")
+            # import traceback # 全局导入已存在，此局部导入通常不需要，但UnboundLocalError提示可能存在作用域问题
+            # 为了确保 traceback.format_exc() 在此处可用，我们依赖顶部的全局导入
             logger.error(f"生成今日词云失败详细信息: {traceback.format_exc()}")
             yield event.plain_result(f"生成今日词云失败: {str(e)}")
 
@@ -1129,7 +1143,7 @@ class WordCloudPlugin(Star):
 
     async def auto_generate_wordcloud(self):
         """自动生成词云的定时任务回调"""
-        logger.debug("开始执行自动生成词云任务")
+        logger.info("开始执行自动生成词云任务")
 
         try:
             # 获取配置
@@ -1194,7 +1208,7 @@ class WordCloudPlugin(Star):
                     logger.error(f"为会话 {session_id} 自动生成词云失败: {e}")
                     continue
 
-            logger.debug("自动生成词云任务执行完成")
+            logger.info("自动生成词云任务执行完成")
 
         except Exception as e:
             logger.error(f"自动生成词云任务执行失败: {e}")
@@ -1203,21 +1217,29 @@ class WordCloudPlugin(Star):
         """
         生成每日词云定时任务
         """
-        logger.debug("开始执行每日词云生成任务")
-        
+        logger.info("开始执行每日词云生成任务")
+
         # 使用任务ID创建任务锁，防止并发执行
         task_id = "daily_wordcloud_task"
-        task_lock_file = os.path.join(self.data_dir, f"{task_id}.lock")
-        
+        # 确保DATA_DIR存在
+        if constant_module.DATA_DIR is None:
+            logger.error("DATA_DIR未初始化，无法创建任务锁")
+            return
+
+        # 创建锁文件
+        task_lock_file = os.path.join(constant_module.DATA_DIR, f"{task_id}.lock")
+
         # 检查锁文件是否存在
         if os.path.exists(task_lock_file):
             # 检查锁文件的时间
             lock_time = os.path.getmtime(task_lock_file)
             current_time = time.time()
-            
+
             # 如果锁文件创建时间在30分钟内，说明可能有其他任务正在执行
             if current_time - lock_time < 1800:  # 30分钟
-                logger.warning(f"每日词云生成任务可能正在进行中(pid:{os.getpid()})，跳过本次执行")
+                logger.warning(
+                    f"每日词云生成任务可能正在进行中(pid:{os.getpid()})，跳过本次执行"
+                )
                 return
             else:
                 # 锁文件太旧，可能是之前的任务异常退出，删除旧锁文件
@@ -1228,72 +1250,270 @@ class WordCloudPlugin(Star):
                     logger.error(f"删除陈旧的任务锁文件失败: {e}")
                     # 如果无法删除，仍跳过本次执行
                     return
-        
+
         try:
             # 创建锁文件
-            with open(task_lock_file, 'w') as f:
-                f.write(f"PID: {os.getpid()}, Time: {time.strftime('%Y-%m-%d %H:%M:%S')}")
-                
+            with open(task_lock_file, "w") as f:
+                f.write(
+                    f"PID: {os.getpid()}, Time: {time.strftime('%Y-%m-%d %H:%M:%S')}"
+                )
+
             # 使用一个标志来跟踪任务是否执行成功
             task_completed = False
-                
+
             try:
-                date = datetime.date.today() - datetime.timedelta(days=1)
+                # 获取当前日期作为目标日期
+                date = datetime.date.today()
                 logger.info(f"任务执行日期: {date}")
 
-                # 获取所有启用的群组
-                enabled_groups = [
-                    g_id for g_id, cfg in self.group_configs.items() if cfg.get("enabled", False)
-                ]
-                logger.info(f"已启用词云的群组数量: {len(enabled_groups)}")
+                # 获取所有活跃的会话
+                active_sessions = self.history_manager.get_active_sessions()
+                logger.info(f"发现活跃会话数量: {len(active_sessions)}")
 
-                # 为每个群组生成词云
-                for group_id in enabled_groups:
+                # 遍历所有活跃会话
+                for session_id in active_sessions:
                     try:
-                        logger.info(f"为群组 {group_id} 生成词云")
-                        result = self.wc_generator.generate_daily_wordcloud(group_id, date)
-                        
-                        if result[0]:  # 生成成功
-                            img_path = result[1]
-                            logger.info(f"成功生成群组 {group_id} 的词云图片: {img_path}")
-                            
-                            # 检查是否需要发送到群组
-                            group_config = self.group_configs.get(group_id, {})
-                            if group_config.get("auto_send", False):
-                                chat_id = group_id  # 假设group_id就是聊天ID
-                                
-                                # 构建消息链
-                                message = [
-                                    Comp.Plain(f"【每日词云】{date} 热词统计"),
-                                    Comp.Plain("\n"),
-                                    Comp.Image(path=img_path)
-                                ]
-                                
-                                logger.info(f"准备向群组 {chat_id} 发送词云图片")
-                                send_result = await self.context.api.send_group_msg(
-                                    group_id=chat_id,
-                                    message=MessageChain(message)
+                        # 检查是否是群聊
+                        if (
+                            "group" not in session_id.lower()
+                            and "GroupMessage" not in session_id
+                            and "_group_" not in session_id
+                        ):
+                            logger.debug(f"会话 {session_id} 不是群聊，跳过")
+                            continue
+
+                        # 使用工具函数提取群ID
+                        group_id = extract_group_id_from_session(session_id)
+
+                        if not group_id:
+                            logger.warning(f"无法从会话ID {session_id} 提取群ID，跳过")
+                            continue
+
+                        # 检查群是否启用了词云功能
+                        if not is_group_enabled(group_id, self.enabled_groups):
+                            logger.info(f"群 {group_id} 未启用词云功能，跳过")
+                            continue
+
+                        logger.info(
+                            f"为群 {group_id} (会话ID: {session_id}) 生成每日词云"
+                        )
+
+                        # 计算当前的时间范围
+                        today_start = datetime.datetime.combine(date, datetime.time.min)
+                        today_end = datetime.datetime.combine(date, datetime.time.max)
+                        start_timestamp = int(today_start.timestamp())
+                        end_timestamp = int(today_end.timestamp())
+
+                        # 使用新添加的方法获取指定时间范围内的消息
+                        all_messages = (
+                            self.history_manager.get_messages_by_timestamp_range(
+                                session_id=session_id,
+                                start_timestamp=start_timestamp,
+                                end_timestamp=end_timestamp,
+                                limit=5000,  # 增加限制以获取更多消息
+                            )
+                        )
+
+                        if not all_messages:
+                            logger.info(f"群 {group_id} 在 {date} 没有消息记录，跳过")
+                            continue
+
+                        logger.info(
+                            f"群 {group_id} 在 {date} 有 {len(all_messages)} 条消息"
+                        )
+                        total_messages_for_date = len(all_messages)
+
+                        # 生成词云
+                        # image_path = get_daily_image_path(session_id, date) # image_path variable seems unused later for wordcloud generation
+
+                        # 处理消息文本并生成词云
+                        word_counts = self.wordcloud_generator.process_texts(
+                            all_messages
+                        )
+
+                        # 设置标题
+                        date_str_title = date.strftime(
+                            "%Y年%m月%d日"
+                        )  # Full date for titles
+                        title = f"群聊词云 - {date_str_title}"
+
+                        # 生成词云图片
+                        image_path_wc, path_obj = (
+                            self.wordcloud_generator.generate_wordcloud(  # Renamed to avoid conflict
+                                word_counts, session_id, title=title
+                            )
+                        )
+
+                        if not path_obj:
+                            logger.warning(f"为群 {group_id} 生成词云失败")
+                            continue
+
+                        logger.info(f"成功为群 {group_id} 生成词云: {image_path_wc}")
+
+                        # 构建消息
+                        message_chain_wc = [  # Renamed
+                            Comp.Plain(f"【每日词云】{date_str_title}热词统计\n"),
+                            Comp.Image(file=str(path_obj)),
+                        ]
+
+                        # 发送消息到群
+                        sendable_session_id = self._get_astrbot_sendable_session_id(
+                            session_id
+                        )
+                        logger.info(f"准备发送词云到会话: {sendable_session_id}")
+
+                        # 使用适当的API发送消息
+                        try:
+                            logger.info(
+                                f"Attempting to send message to session_id: {sendable_session_id} (derived from group_id: {group_id})"
+                            )
+                            result = await self.context.send_message(
+                                sendable_session_id, MessageChain(message_chain_wc)
+                            )
+                            if result:
+                                logger.info(
+                                    f"Successfully sent daily wordcloud to session: {sendable_session_id}"
                                 )
-                                
-                                if send_result and send_result.get("message_id"):
-                                    logger.info(f"成功向群组 {chat_id} 发送词云图片")
-                                else:
-                                    logger.warning(f"向群组 {chat_id} 发送词云图片失败: {send_result}")
-                        else:
-                            logger.warning(f"为群组 {group_id} 生成词云失败: {result[1]}")
-                            
-                    except Exception as e:
-                        logger.error(f"处理群组 {group_id} 的词云时出错: {e}")
-                        logger.error(traceback.format_exc())
-                
+
+                                # --- BEGIN: Add user ranking logic ---
+                                show_ranking_config = self.config.get(
+                                    "show_user_ranking", True
+                                )
+                                logger.info(
+                                    f"[排行榜-每日] show_user_ranking配置: {show_ranking_config} for session {session_id}"
+                                )
+
+                                if show_ranking_config:
+                                    try:  # Outer try for overall ranking generation and sending
+                                        logger.info(
+                                            f"[排行榜-每日] 开始为会话 {session_id} 生成用户排行榜"
+                                        )
+
+                                        target_date_start_ts = int(
+                                            datetime.datetime.combine(
+                                                date, datetime.time.min
+                                            ).timestamp()
+                                        )
+                                        target_date_end_ts = int(
+                                            datetime.datetime.combine(
+                                                date, datetime.time.max
+                                            ).timestamp()
+                                        )
+
+                                        ranking_limit = self.config.get(
+                                            "ranking_user_count", 5
+                                        )
+
+                                        active_users = self.history_manager.get_active_users_for_date_range(
+                                            session_id,
+                                            target_date_start_ts,
+                                            target_date_end_ts,
+                                            limit=ranking_limit,
+                                        )
+                                        total_users = self.history_manager.get_total_users_for_date_range(
+                                            session_id,
+                                            target_date_start_ts,
+                                            target_date_end_ts,
+                                        )
+
+                                        logger.info(
+                                            f"[排行榜-每日] 会话 {session_id} 在 {date} 的总参与用户数: {total_users}"
+                                        )
+                                        logger.info(
+                                            f"[排行榜-每日] 获取到活跃用户数量: {len(active_users) if active_users else 0}"
+                                        )
+
+                                        if active_users and len(active_users) > 0:
+                                            # day_description_for_header_and_thanks = date.strftime('%m月%d日') # No longer needed for this exact style
+                                            # date_str_title = date.strftime("%Y年%m月%d日") # Still needed for WC image title and intro
+
+                                            ranking_text_lines = []
+                                            ranking_text_lines.append(
+                                                f"本群 {total_users} 位朋友共产生 {total_messages_for_date} 条发言"
+                                            )  # Style of 图二
+                                            ranking_text_lines.append(
+                                                "👀 看下有没有你感兴趣的关键词?"
+                                            )  # Style of 图二
+                                            ranking_text_lines.append("")  # Blank line
+                                            ranking_text_lines.append(
+                                                "活跃用户排行榜:"
+                                            )  # Style of 图二
+
+                                            medals_str = self.config.get(
+                                                "ranking_medals", "🥇,🥈,🥉,🏅,🏅"
+                                            )
+                                            medals = [
+                                                m.strip() for m in medals_str.split(",")
+                                            ]
+
+                                            for i, (
+                                                user_id,
+                                                user_name,
+                                                count,
+                                            ) in enumerate(active_users):
+                                                medal = (
+                                                    medals[i]
+                                                    if i < len(medals)
+                                                    else medals[-1]
+                                                )
+                                                ranking_text_lines.append(
+                                                    f"{medal} {user_name} 贡献: {count} 条"
+                                                )
+
+                                            ranking_text_lines.append("")  # Blank line
+                                            ranking_text_lines.append(
+                                                "🎉 感谢这些朋友今天的分享! 🎉"
+                                            )  # Style of 图二
+
+                                            final_ranking_str = "\n".join(
+                                                ranking_text_lines
+                                            )
+                                            # sendable_ranking_session_id = self._get_astrbot_sendable_session_id(target_session_id_for_query) # Incorrect, target_session_id_for_query not in this scope
+                                            # daily_generate_wordcloud already uses sendable_session_id derived earlier for the wordcloud image.
+                                            logger.info(
+                                                f"[排行榜-每日] 准备发送排行榜到会话: {sendable_session_id}"
+                                            )
+                                            ranking_msg_chain = MessageChain(
+                                                [Comp.Plain(final_ranking_str)]
+                                            )
+                                            await self.context.send_message(
+                                                sendable_session_id, ranking_msg_chain
+                                            )
+                                    except Exception as ranking_error:  # Catch errors during ranking generation/sending
+                                        logger.error(
+                                            f"[排行榜-每日] 为会话 {session_id} 生成或发送排行榜时出错: {ranking_error}"
+                                        )
+                                        logger.error(
+                                            f"[排行榜-每日] 排行榜错误详情: {traceback.format_exc()}"
+                                        )
+                                # --- END: Add user ranking logic ---
+                            else:
+                                logger.warning(
+                                    f"Failed to send daily wordcloud to session: {sendable_session_id}. Result: {result}"
+                                )
+
+                        except (
+                            Exception
+                        ) as send_err:  # This except is for the daily wordcloud sending
+                            logger.error(
+                                f"Error sending daily wordcloud to session {sendable_session_id}: {send_err}"
+                            )
+                            logger.error(
+                                f"Traceback for send error: {traceback.format_exc()}"
+                            )
+
+                    except Exception as e:  # This except is for the per-session processing in daily_generate_wordcloud
+                        logger.error(f"处理会话 {session_id} 时出错: {e}")
+                        logger.error(f"错误详情: {traceback.format_exc()}")
+
                 # 标记任务完成
                 task_completed = True
                 logger.info("成功完成每日词云生成任务")
-                
+
             except Exception as e:
                 logger.error(f"执行每日词云生成任务时出错: {e}")
-                logger.error(traceback.format_exc())
-                
+                logger.error(f"错误详情: {traceback.format_exc()}")
+
             # 更新锁文件状态或删除锁文件
             if task_completed:
                 try:
@@ -1302,10 +1522,10 @@ class WordCloudPlugin(Star):
                     logger.info("删除任务锁文件")
                 except Exception as e:
                     logger.error(f"删除任务锁文件失败: {e}")
-            
+
         except Exception as e:
             logger.error(f"创建任务锁时出错: {e}")
-            logger.error(traceback.format_exc())
+            logger.error(f"错误详情: {traceback.format_exc()}")
 
     @wordcloud_group.command("force_daily")
     async def force_daily_command(self, event: AstrMessageEvent):
@@ -1327,42 +1547,42 @@ class WordCloudPlugin(Star):
             logger.error(f"错误详情: {traceback.format_exc()}")
             yield event.plain_result(f"强制执行每日词云生成任务失败: {str(e)}")
 
-    async def terminate(self):
+    def terminate(self):
         """
         插件终止时的清理操作
         """
         try:
             logger.info("WordCloud plugin terminating...")
-            
+
             # 确保调度器被正确停止
-            if hasattr(self, 'scheduler') and self.scheduler is not None:
-                logger.debug("Stopping scheduler...")
+            if hasattr(self, "scheduler") and self.scheduler is not None:
+                logger.info("Stopping scheduler...")
                 try:
                     self.scheduler.stop()
-                    logger.debug("Scheduler stopped successfully")
+                    logger.info("Scheduler stopped successfully")
                 except Exception as e:
                     logger.error(f"Error stopping scheduler: {e}")
-                
+
                 # 移除调度器引用
                 self.scheduler = None
-            
+
             # 确保历史管理器被正确关闭
-            if hasattr(self, 'history_manager') and self.history_manager is not None:
-                logger.debug("Closing history manager...")
+            if hasattr(self, "history_manager") and self.history_manager is not None:
+                logger.info("Closing history manager...")
                 try:
                     self.history_manager.close()
-                    logger.debug("History manager closed successfully")
+                    logger.info("History manager closed successfully")
                 except Exception as e:
                     logger.error(f"Error closing history manager: {e}")
-                
+
                 # 移除历史管理器引用
                 self.history_manager = None
-            
+
             # 如果有事件循环引用，确保它被清理
-            if hasattr(self, 'main_loop') and self.main_loop is not None:
-                logger.debug("Cleaning up main loop reference")
+            if hasattr(self, "main_loop") and self.main_loop is not None:
+                logger.info("Cleaning up main loop reference")
                 self.main_loop = None
-            
+
             logger.info("WordCloud plugin terminated")
         except Exception as e:
             logger.error(f"Error during plugin termination: {e}")
@@ -1371,79 +1591,128 @@ class WordCloudPlugin(Star):
     async def _check_natural_language_keywords(self, event: AstrMessageEvent):
         """
         检查消息是否匹配自然语言关键词，如果匹配则执行相应命令
-        
+
         Args:
             event: 消息事件
-            
+
         Returns:
             bool: 如果处理了关键词命令返回True，否则返回False
         """
         if not event.message_str:
             return False
-        
+
         message = event.message_str.strip()
-        
+
         # 检查是否匹配任何自然语言关键词
-        for command, keywords in NATURAL_KEYWORDS.items():
+        for (
+            command_type,
+            keywords,
+        ) in (
+            NATURAL_KEYWORDS.items()
+        ):  # Renamed command to command_type to avoid conflict
             for keyword in keywords:
                 if message == keyword:
-                    logger.info(f"检测到自然语言关键词: {keyword}, 执行命令: {command}")
-                    
+                    logger.info(
+                        f"检测到自然语言关键词: {keyword}, 执行命令: {command_type}"
+                    )
+
                     try:
                         # 根据命令执行相应的函数
-                        if command == "today":
-                            # 调用today命令函数，但不使用send方法，而是直接处理返回结果
+                        if command_type == "today":
                             async for result in self.today_command(event):
-                                if hasattr(result, 'send') and callable(getattr(result, 'send')):
+                                if hasattr(result, "send") and callable(
+                                    getattr(result, "send")
+                                ):
                                     await result.send()
                                 else:
-                                    # 使用context发送消息
-                                    sendable_session_id = self._get_astrbot_sendable_session_id(event.unified_msg_origin)
+                                    sendable_session_id = (
+                                        self._get_astrbot_sendable_session_id(
+                                            event.unified_msg_origin
+                                        )
+                                    )
                                     if isinstance(result, MessageChain):
-                                        await self.context.send_message(sendable_session_id, result)
-                                    elif hasattr(result, 'to_message_chain'):
+                                        await self.context.send_message(
+                                            sendable_session_id, result
+                                        )
+                                    elif hasattr(result, "to_message_chain"):
                                         message_chain = result.to_message_chain()
-                                        await self.context.send_message(sendable_session_id, message_chain)
-                            return True
-                        
-                        elif command == "wordcloud":
-                            # 调用生成词云命令，默认使用7天
+                                        await self.context.send_message(
+                                            sendable_session_id, message_chain
+                                        )
+                            return True  # Command processed
+
+                        elif command_type == "wordcloud":
                             days = self.config.get("history_days", 7)
-                            async for result in self.generate_wordcloud_command(event, days):
-                                if hasattr(result, 'send') and callable(getattr(result, 'send')):
+                            async for result in self.generate_wordcloud_command(
+                                event, days
+                            ):
+                                if hasattr(result, "send") and callable(
+                                    getattr(result, "send")
+                                ):
                                     await result.send()
                                 else:
-                                    # 使用context发送消息
-                                    sendable_session_id = self._get_astrbot_sendable_session_id(event.unified_msg_origin)
+                                    sendable_session_id = (
+                                        self._get_astrbot_sendable_session_id(
+                                            event.unified_msg_origin
+                                        )
+                                    )
                                     if isinstance(result, MessageChain):
-                                        await self.context.send_message(sendable_session_id, result)
-                                    elif hasattr(result, 'to_message_chain'):
+                                        await self.context.send_message(
+                                            sendable_session_id, result
+                                        )
+                                    elif hasattr(result, "to_message_chain"):
                                         message_chain = result.to_message_chain()
-                                        await self.context.send_message(sendable_session_id, message_chain)
-                            return True
-                        
-                        elif command == "help":
-                            # 调用帮助命令
+                                        await self.context.send_message(
+                                            sendable_session_id, message_chain
+                                        )
+                            return True  # Command processed
+
+                        elif command_type == "help":
                             async for result in self.help_command(event):
-                                if hasattr(result, 'send') and callable(getattr(result, 'send')):
+                                if hasattr(result, "send") and callable(
+                                    getattr(result, "send")
+                                ):
                                     await result.send()
                                 else:
-                                    # 使用context发送消息
-                                    sendable_session_id = self._get_astrbot_sendable_session_id(event.unified_msg_origin)
+                                    sendable_session_id = (
+                                        self._get_astrbot_sendable_session_id(
+                                            event.unified_msg_origin
+                                        )
+                                    )
                                     if isinstance(result, MessageChain):
-                                        await self.context.send_message(sendable_session_id, result)
-                                    elif hasattr(result, 'to_message_chain'):
+                                        await self.context.send_message(
+                                            sendable_session_id, result
+                                        )
+                                    elif hasattr(result, "to_message_chain"):
                                         message_chain = result.to_message_chain()
-                                        await self.context.send_message(sendable_session_id, message_chain)
-                            return True
-                    except Exception as e:
-                        logger.error(f"执行自然语言命令 {command} 失败: {e}")
-                        # 尝试发送错误消息
+                                        await self.context.send_message(
+                                            sendable_session_id, message_chain
+                                        )
+                            return True  # Command processed
+
+                    except (
+                        Exception
+                    ) as e_cmd_exec:  # Catch exceptions during command execution
+                        logger.error(
+                            f"执行自然语言命令 {command_type} 失败: {e_cmd_exec}"
+                        )
+                        logger.error(
+                            f"Traceback for command execution error: {traceback.format_exc()}"
+                        )
                         try:
-                            sendable_session_id = self._get_astrbot_sendable_session_id(event.unified_msg_origin)
-                            await self.context.send_message(sendable_session_id, f"执行命令失败: {str(e)}")
-                        except Exception as send_error:
-                            logger.error(f"发送错误消息失败: {send_error}")
-                    return True
-                    
-        return False
+                            sendable_session_id = self._get_astrbot_sendable_session_id(
+                                event.unified_msg_origin
+                            )
+                            await self.context.send_message(
+                                sendable_session_id,
+                                MessageChain(
+                                    f'执行命令"{keyword}"时出错: {str(e_cmd_exec)}'
+                                ),
+                            )
+                        except Exception as send_error_report_e:
+                            logger.error(
+                                f"发送命令执行错误报告失败: {send_error_report_e}"
+                            )
+                    return True  # Indicate that a keyword was matched and attempt was made to process it
+
+        return False  # No keyword matched

@@ -95,11 +95,11 @@ class HistoryManager:
                         if hasattr(self.db, "commit"):
                             self.db.commit()
 
-                logger.debug("WordCloud历史消息表索引创建成功")
+                logger.info("WordCloud历史消息表索引创建成功")
             except Exception as e:
-                logger.error(f"创建WordCloud历史消息表索引失败，这不会影响功能: {e}")
+                logger.warning(f"创建WordCloud历史消息表索引失败，这不会影响功能: {e}")
 
-            logger.debug("WordCloud历史消息表创建成功或已存在")
+            logger.info("WordCloud历史消息表创建成功或已存在")
         except Exception as e:
             logger.error(f"创建WordCloud历史消息表失败: {e}")
 
@@ -333,7 +333,7 @@ class HistoryManager:
                 sessions = [row[0] for row in cursor.fetchall()]
 
                 cursor.close()
-                logger.debug(f"获取到{len(sessions)}个活跃会话(天数: {days})")
+                logger.info(f"获取到{len(sessions)}个活跃会话(天数: {days})")
                 return sessions
             except Exception as db_error:
                 logger.error(f"获取活跃会话数据库操作失败: {db_error}")
@@ -695,6 +695,78 @@ class HistoryManager:
             logger.error(f"获取今天的用户数量失败: {e}")
             return 0
 
+    def get_total_users_for_date_range(
+        self, session_id: str, start_timestamp: int, end_timestamp: int
+    ) -> int:
+        """
+        获取指定会话在指定时间戳范围内的总独立用户数。
+
+        Args:
+            session_id: 会话ID
+            start_timestamp: 开始时间戳
+            end_timestamp: 结束时间戳
+
+        Returns:
+            独立用户总数
+        """
+        try:
+            query_sql = """
+            SELECT COUNT(DISTINCT sender_id)
+            FROM wordcloud_message_history
+            WHERE session_id = ? AND timestamp >= ? AND timestamp <= ?
+            """
+            cursor = self._get_db_cursor()
+            cursor.execute(query_sql, (session_id, start_timestamp, end_timestamp))
+            result = cursor.fetchone()
+            cursor.close()
+            if result:
+                logger.debug(
+                    f"会话 {session_id} 在 {start_timestamp}-{end_timestamp} 范围内总用户数: {result[0]}"
+                )
+                return result[0]
+            return 0
+        except Exception as e:
+            logger.error(f"获取指定日期范围总用户数失败 (会话 {session_id}): {e}")
+            return 0
+
+    def get_active_users_for_date_range(
+        self, session_id: str, start_timestamp: int, end_timestamp: int, limit: int = 10
+    ) -> List[Tuple[str, str, int]]:
+        """
+        获取指定会话在指定时间戳范围内的活跃用户列表（按消息数量排序）。
+
+        Args:
+            session_id: 会话ID
+            start_timestamp: 开始时间戳
+            end_timestamp: 结束时间戳
+            limit: 返回的用户数量上限
+
+        Returns:
+            活跃用户列表，每个元素为 (sender_id, sender_name, message_count)
+        """
+        try:
+            query_sql = """
+            SELECT sender_id, sender_name, COUNT(*) as message_count
+            FROM wordcloud_message_history
+            WHERE session_id = ? AND timestamp >= ? AND timestamp <= ?
+            GROUP BY sender_id, sender_name
+            ORDER BY message_count DESC
+            LIMIT ?
+            """
+            cursor = self._get_db_cursor()
+            cursor.execute(
+                query_sql, (session_id, start_timestamp, end_timestamp, limit)
+            )
+            active_users = cursor.fetchall()
+            cursor.close()
+            logger.debug(
+                f"会话 {session_id} 在 {start_timestamp}-{end_timestamp} 范围内获取到 {len(active_users)} 个活跃用户 (上限 {limit})"
+            )
+            return active_users
+        except Exception as e:
+            logger.error(f"获取指定日期范围活跃用户失败 (会话 {session_id}): {e}")
+            return []
+
     def extract_group_id_from_session(self, session_id: str) -> Optional[str]:
         """
         从会话ID中提取群号
@@ -715,12 +787,100 @@ class HistoryManager:
             logger.error(f"从会话ID提取群号失败: {e}")
             return None
 
+    def get_messages_by_timestamp_range(
+        self,
+        session_id: str,
+        start_timestamp: int,
+        end_timestamp: int,
+        limit: int = 1000,
+    ) -> List[str]:
+        """
+        获取指定时间戳范围内的消息文本列表
+
+        Args:
+            session_id: 会话ID
+            start_timestamp: 开始时间戳
+            end_timestamp: 结束时间戳
+            limit: 最大消息数量限制
+
+        Returns:
+            指定时间范围内的消息文本列表
+        """
+        try:
+            logger.info(
+                f"获取指定时间范围消息 - 会话ID: {session_id}, 时间范围: {start_timestamp} 到 {end_timestamp}"
+            )
+
+            # 查询数据
+            query_sql = """
+            SELECT message
+            FROM wordcloud_message_history
+            WHERE session_id = ? AND timestamp >= ? AND timestamp <= ?
+            ORDER BY timestamp ASC
+            LIMIT ?
+            """
+
+            messages = []
+
+            # 使用_get_db_cursor获取游标并执行
+            try:
+                cursor = self._get_db_cursor()
+                cursor.execute(
+                    query_sql, (session_id, start_timestamp, end_timestamp, limit)
+                )
+
+                # 获取结果
+                for row in cursor.fetchall():
+                    if row[0] and isinstance(row[0], str) and row[0].strip():
+                        messages.append(row[0])
+
+                cursor.close()
+                logger.info(
+                    f"指定时间范围消息获取成功 - 会话ID: {session_id}, 消息数量: {len(messages)}"
+                )
+                return messages
+            except Exception as db_error:
+                logger.error(f"数据库操作失败: {db_error}")
+
+                # 尝试重新连接数据库并重试一次
+                try:
+                    logger.info("尝试重新连接数据库并重试查询...")
+                    if hasattr(self.db, "_get_conn") and callable(
+                        getattr(self.db, "_get_conn")
+                    ):
+                        conn = self.db._get_conn(self.db.db_path)
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            query_sql,
+                            (session_id, start_timestamp, end_timestamp, limit),
+                        )
+
+                        # 获取结果
+                        for row in cursor.fetchall():
+                            if row[0] and isinstance(row[0], str) and row[0].strip():
+                                messages.append(row[0])
+
+                        cursor.close()
+                        logger.info(
+                            f"重试成功，指定时间范围消息获取成功 - 会话ID: {session_id}, 消息数量: {len(messages)}"
+                        )
+                        return messages
+                    else:
+                        logger.error("无法重新连接数据库")
+                        return []
+                except Exception as retry_error:
+                    logger.error(f"重试数据库操作失败: {retry_error}")
+                    return []
+        except Exception as e:
+            logger.error(f"获取指定时间范围消息文本失败: {e}")
+            return []
+
     def close(self):
         """
         关闭历史管理器，释放资源
         """
         logger.info("关闭历史管理器...")
-        
+
         try:
             # 关闭数据库连接
             if hasattr(self, "connection") and self.connection is not None:
@@ -729,16 +889,16 @@ class HistoryManager:
                     logger.info("数据库连接已关闭")
                 except Exception as e:
                     logger.error(f"关闭数据库连接时出错: {e}")
-            
+
             # 清理数据和缓存
             self.word_data = {}
             self.cached_word_counts = {}
             logger.info("历史数据缓存已清理")
-            
+
             # 允许垃圾回收
             self.connection = None
             self.cursor = None
-            
+
             logger.info("历史管理器已成功关闭")
         except Exception as e:
             logger.error(f"关闭历史管理器时出错: {e}")
