@@ -40,26 +40,17 @@ class TaskScheduler:
         """
         # 检查是否有同一个上下文的调度器实例
         global _SCHEDULER_INSTANCES
-        
-        # 保存debug_mode标志
-        self.debug_mode = debug_mode
-        
-        # 如果开启了debug模式，设置日志级别为DEBUG
-        if debug_mode:
-            try:
-                import logging
-                logger.setLevel(logging.DEBUG)
-            except Exception as e:
-                logger.warning(f"设置日志级别失败: {e}")
-            
+
         with _SCHEDULER_LOCK:
             # 使用上下文的ID作为标识符
             context_id = id(context)
-            
+
             if context_id in _SCHEDULER_INSTANCES:
                 existing_scheduler = _SCHEDULER_INSTANCES[context_id]
                 if existing_scheduler.running:
-                    logger.warning(f"已存在运行中的调度器实例(ID: {context_id})，正在复用该实例。")
+                    logger.warning(
+                        f"已存在运行中的调度器实例(ID: {context_id})，正在复用该实例。"
+                    )
                     # 复制现有实例的属性
                     self.context = existing_scheduler.context
                     self.tasks = existing_scheduler.tasks
@@ -68,23 +59,28 @@ class TaskScheduler:
                     self.main_loop = existing_scheduler.main_loop
                     self.debug_mode = existing_scheduler.debug_mode
                     self._event_loop = getattr(existing_scheduler, "_event_loop", None)
+                    self._poller_task = getattr(
+                        existing_scheduler, "_poller_task", None
+                    )
                     return
                 else:
                     # 如果实例存在但没有运行，我们应该清理它
-                    logger.debug(f"发现未运行的调度器实例(ID: {context_id})，将替换它。")
-            
+                    logger.info(f"发现未运行的调度器实例(ID: {context_id})，将替换它。")
+
             # 如果没有找到实例或实例没有运行，创建一个新实例
             self.context = context
             self.tasks: Dict[str, Dict[str, Any]] = {}
             self.running = False
             self.thread = None
             self.main_loop = main_loop
-            self._event_loop = None
-            
+            self.debug_mode = debug_mode
+            self._event_loop: Optional[asyncio.AbstractEventLoop] = None
+            self._poller_task: Optional[asyncio.Task] = None
+
             # 将新实例添加到全局字典
             _SCHEDULER_INSTANCES[context_id] = self
-            
-            logger.debug(
+
+            logger.info(
                 f"TaskScheduler initialized with main loop ID: {id(self.main_loop)}, Debug Mode: {self.debug_mode}"
             )
 
@@ -104,7 +100,7 @@ class TaskScheduler:
             # 检查任务是否已存在
             if task_id in self.tasks:
                 logger.warning(f"任务ID {task_id} 已存在，将被覆盖")
-                
+
             # 验证cron表达式
             if not croniter.is_valid(cron_expression):
                 logger.error(f"无效的cron表达式: {cron_expression}")
@@ -182,7 +178,7 @@ class TaskScheduler:
             return
 
         self.running = True
-        
+
         # 确保没有旧的线程在运行
         if self.thread and self.thread.is_alive():
             logger.warning("调度器已有线程正在运行，尝试停止它")
@@ -194,12 +190,14 @@ class TaskScheduler:
                 self.running = old_running_state
             except Exception as e:
                 logger.error(f"停止旧线程时出错: {e}")
-                
+
         # 创建新线程
-        self.thread = threading.Thread(target=self._run_scheduler, name=f"TaskScheduler-{id(self)}")
+        self.thread = threading.Thread(
+            target=self._run_scheduler, name=f"TaskScheduler-{id(self)}"
+        )
         self.thread.daemon = True
         self.thread.start()
-        logger.debug("调度器已启动")
+        logger.info("调度器已启动")
 
     def stop(self) -> None:
         """停止调度器"""
@@ -207,40 +205,33 @@ class TaskScheduler:
             logger.warning("调度器未运行")
             return
 
-        logger.debug("正在停止调度器...")
-        self.running = False
-        
+        logger.info("正在停止调度器...")
+        self.running = False  # Signal the async_poller to stop
+
+        # Stop the asyncio event loop in the scheduler's thread
+        if self._event_loop and self._event_loop.is_running():
+            logger.info(
+                "SCHED: Calling loop.stop() via call_soon_threadsafe to stop run_forever."
+            )
+            self._event_loop.call_soon_threadsafe(self._event_loop.stop)
+
         if self.thread and self.thread.is_alive():
             try:
-                # 等待线程结束
-                self.thread.join(timeout=5.0)
+                # Wait for the scheduler thread to finish
+                logger.info("SCHED: Waiting for scheduler thread to join...")
+                self.thread.join(timeout=10.0)  # Increased timeout
                 if self.thread.is_alive():
-                    logger.warning("调度器线程未能在超时时间内停止")
+                    logger.warning("SCHED: Scheduler thread did not join in time.")
                 else:
-                    logger.debug("调度器线程已退出")
+                    logger.info("SCHED: Scheduler thread joined successfully.")
             except Exception as e:
-                logger.error(f"停止调度器线程时出错: {e}")
-        
-        # 清理事件循环
-        if self._event_loop:
-            try:
-                # 尝试关闭事件循环
-                if not self._event_loop.is_closed():
-                    # 在Windows上，有时关闭事件循环可能会抛出异常
-                    try:
-                        if hasattr(self._event_loop, 'shutdown_asyncgens'):
-                            self._event_loop.run_until_complete(self._event_loop.shutdown_asyncgens())
-                        self._event_loop.close()
-                        logger.debug("调度器线程的事件循环已关闭")
-                    except Exception as e:
-                        logger.error(f"关闭事件循环时出错: {e}")
-            except Exception as e:
-                logger.error(f"清理事件循环时出错: {e}")
-                
-            self._event_loop = None
-            
-        logger.debug("调度器已停止")
-        
+                logger.error(f"SCHED: Error stopping scheduler thread: {e}")
+
+        # Event loop cleanup is now primarily handled in _run_scheduler's finally block
+        # self._event_loop = None # Nullify after thread has joined and loop is closed by _run_scheduler
+
+        logger.info("调度器已停止")
+
         # 从实例字典中移除自己
         with _SCHEDULER_LOCK:
             for context_id, scheduler in list(_SCHEDULER_INSTANCES.items()):
@@ -248,129 +239,218 @@ class TaskScheduler:
                     del _SCHEDULER_INSTANCES[context_id]
                     break
 
-    def _run_scheduler(self) -> None:
-        """运行调度器线程"""
-        logger.debug("调度器线程已启动")
+    async def _async_poller(self, loop: asyncio.AbstractEventLoop):
+        """Asynchronous task poller running inside the scheduler's event loop."""
+        logger.info("SCHED ASYNC_POLLER: Async poller task started.")
         last_heartbeat = time.time()
-        heartbeat_interval = 600  # 每10分钟记录一次心跳日志
+        heartbeat_interval = 600  # Original: 600 seconds (10 minutes)
+        task_check_interval = 1.0  # Check tasks every second
 
-        # 创建一个线程专用的事件循环
+        try:
+            while self.running:
+                now = time.time()
+                current_time_str = time.strftime(
+                    "%Y-%m-%d %H:%M:%S", time.localtime(now)
+                )
+
+                # Heartbeat log
+                if now - last_heartbeat >= heartbeat_interval:
+                    logger.info(
+                        f"SCHED ASYNC_POLLER: Heartbeat. Current time: {current_time_str}, Task count: {len(self.tasks)}"
+                    )
+                    last_heartbeat = now
+
+                for task_id, task_details in list(self.tasks.items()):
+                    try:
+                        if not all(
+                            k in task_details
+                            for k in ["next_run", "running", "cron", "callback"]
+                        ):
+                            missing_keys = [
+                                k
+                                for k in ["next_run", "running", "cron", "callback"]
+                                if k not in task_details
+                            ]
+                            logger.warning(
+                                f"SCHED ASYNC_POLLER: Task '{task_id}' missing keys: {missing_keys}"
+                            )
+                            continue
+
+                        if (
+                            now >= task_details["next_run"]
+                            and not task_details["running"]
+                        ):
+                            exec_time_str = time.strftime(
+                                "%Y-%m-%d %H:%M:%S",
+                                time.localtime(task_details["next_run"]),
+                            )
+                            logger.info(
+                                f"SCHED ASYNC_POLLER: Triggering task '{task_id}'. Scheduled: {exec_time_str}, Current: {current_time_str}"
+                            )
+
+                            task_details["running"] = True
+                            task_details["next_run"] = (
+                                task_details["cron"]
+                                .get_next(datetime.datetime)
+                                .timestamp()
+                            )
+
+                            future = loop.create_task(
+                                self._execute_task(task_id, task_details)
+                            )
+
+                            current_task_id_for_callback = task_id
+
+                            def _task_done_callback(f):
+                                try:
+                                    f.result()
+                                    logger.info(
+                                        f"SCHED ASYNC_POLLER: Task '{current_task_id_for_callback}' (from create_task) completed successfully."
+                                    )
+                                except asyncio.CancelledError:
+                                    logger.warning(
+                                        f"SCHED ASYNC_POLLER: Task '{current_task_id_for_callback}' (from create_task) was cancelled."
+                                    )
+                                except Exception as e_callback:
+                                    logger.error(
+                                        f"SCHED ASYNC_POLLER: Exception in executed task '{current_task_id_for_callback}': {e_callback}"
+                                    )
+                                    logger.error(
+                                        f"SCHED ASYNC_POLLER: Traceback for task '{current_task_id_for_callback}': {traceback.format_exc()}"
+                                    )
+
+                            future.add_done_callback(_task_done_callback)
+
+                    except Exception as e_inner_loop:
+                        logger.error(
+                            f"SCHED ASYNC_POLLER: Error in task processing loop for task_id '{task_id}': {e_inner_loop}"
+                        )
+                        logger.error(
+                            f"SCHED ASYNC_POLLER: Traceback: {traceback.format_exc()}"
+                        )
+                        if task_id in self.tasks and isinstance(
+                            self.tasks.get(task_id), dict
+                        ):
+                            self.tasks[task_id]["running"] = False
+
+                await asyncio.sleep(task_check_interval)
+
+            logger.info("SCHED ASYNC_POLLER: Exiting as self.running is False.")
+        except asyncio.CancelledError:
+            logger.info("SCHED ASYNC_POLLER: Poller task was cancelled.")
+        except Exception as e_poller:
+            logger.error(f"SCHED ASYNC_POLLER: Poller task crashed: {e_poller}")
+            logger.error(f"SCHED ASYNC_POLLER: Traceback: {traceback.format_exc()}")
+
+    def _run_scheduler(self) -> None:
+        """Runs the scheduler in a dedicated thread with its own asyncio event loop."""
+        logger.info("调度器线程已启动")
+        loop: Optional[asyncio.AbstractEventLoop] = None
+
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            self._event_loop = loop  # 保存引用以便清理
-            logger.debug("为调度器线程创建了新的事件循环")
-        except Exception as e:
-            logger.error(f"为调度器线程创建事件循环失败: {e}")
-            logger.error(f"事件循环创建错误详情: {traceback.format_exc()}")
-            return
+            self._event_loop = loop
+            logger.info("为调度器线程创建了新的事件循环")
 
-        # 线程主循环，每秒检查一次任务
-        task_check_interval = 1.0  # 秒
-        last_task_check = time.time()
-        
-        try:
-            while self.running:
-                try:
-                    # 适当休眠，避免CPU过度使用
-                    now = time.time()
-                    time_since_last_check = now - last_task_check
-                    
-                    if time_since_last_check < task_check_interval:
-                        # 如果距离上次检查不到1秒，休眠一段时间
-                        sleep_time = task_check_interval - time_since_last_check
-                        time.sleep(sleep_time)
-                        now = time.time()
-                        
-                    last_task_check = now
-                    current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(now))
+            self._poller_task = loop.create_task(self._async_poller(loop))
 
-                    # 记录心跳日志
-                    if now - last_heartbeat >= heartbeat_interval:
-                        logger.info(
-                            f"调度器正在运行 - 当前时间: {current_time}, 任务数量: {len(self.tasks)}"
-                        )
-                        last_heartbeat = now
-                    
-                    # 检查任务是否需要执行
-                    for task_id, task in list(self.tasks.items()):
-                        try:
-                            # 确保任务有所有必要的字段
-                            if not all(
-                                k in task
-                                for k in ["next_run", "running", "cron", "callback"]
-                            ):
-                                missing_keys = [
-                                    k
-                                    for k in ["next_run", "running", "cron", "callback"]
-                                    if k not in task
-                                ]
-                                logger.warning(
-                                    f"任务 {task_id} 缺少必要字段: {missing_keys}"
-                                )
-                                continue
+            logger.info("SCHED: Starting event loop with run_forever().")
+            loop.run_forever()  # This blocks until loop.stop() is called
+            logger.info("SCHED: Event loop run_forever() has exited.")
 
-                            next_run = task["next_run"]
-                            
-                            # 检查任务是否应该执行
-                            if now >= next_run and not task["running"]:
-                                # 获取执行时间
-                                exec_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(next_run))
-                                logger.info(f"开始执行定时任务: {task_id}，执行时间: {current_time}，计划时间: {exec_time}")
-                                
-                                # 标记任务为正在运行
-                                task["running"] = True
-                                
-                                # 更新下一次执行时间
-                                task["next_run"] = task["cron"].get_next(datetime.datetime).timestamp()
-                                
-                                # 在当前事件循环中执行任务
-                                asyncio.run_coroutine_threadsafe(
-                                    self._execute_task(task_id, task),
-                                    loop
-                                )
-                        except Exception as e:
-                            logger.error(f"检查任务 {task_id} 执行条件时出错: {e}")
-                            logger.error(f"错误详情: {traceback.format_exc()}")
-                            
-                            # 重置任务状态，避免任务卡住
-                            if task_id in self.tasks:
-                                self.tasks[task_id]["running"] = False
-                
-                except Exception as e:
-                    logger.error(f"调度器主循环出错: {e}")
-                    logger.error(f"错误详情: {traceback.format_exc()}")
-                    # 短暂休眠以避免在错误情况下的紧密循环
-                    time.sleep(1.0)
-        
-        except Exception as e:
-            logger.error(f"调度器线程异常终止: {e}")
-            logger.error(f"错误详情: {traceback.format_exc()}")
+        except asyncio.CancelledError:
+            logger.info(
+                "SCHED: _run_scheduler's run_forever() was cancelled (likely during stop)."
+            )
+        except Exception as e_outer:
+            logger.error(f"SCHED: _run_scheduler outer error: {e_outer}")
+            logger.error(
+                f"SCHED: _run_scheduler outer traceback: {traceback.format_exc()}"
+            )
         finally:
-            # 关闭事件循环
-            try:
-                if not loop.is_closed():
-                    logger.info("关闭调度器线程的事件循环...")
-                    
-                    # 关闭前尝试取消所有待处理的任务
-                    pending = asyncio.all_tasks(loop) if hasattr(asyncio, 'all_tasks') else asyncio.Task.all_tasks(loop)
-                    for task in pending:
-                        task.cancel()
-                    
-                    # 让事件循环运行直到所有任务处理完取消操作
-                    if pending:
-                        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-                    
-                    # 关闭事件循环
-                    if hasattr(loop, 'shutdown_asyncgens'):
+            logger.info("SCHED: _run_scheduler finally block entered.")
+
+            if self._poller_task and not self._poller_task.done():
+                logger.info("SCHED: Cancelling poller task in finally.")
+                self._poller_task.cancel()
+                if (
+                    loop and not loop.is_closed() and not loop.is_running()
+                ):  # if run_forever exited
+                    # Need to run the loop briefly to process the cancellation
+                    try:
+                        logger.info(
+                            "SCHED: Running loop briefly to process poller cancellation."
+                        )
+                        loop.run_until_complete(self._poller_task)
+                    except asyncio.CancelledError:
+                        logger.info(
+                            "SCHED: Poller task successfully cancelled in finally."
+                        )
+                    except Exception as e_poll_cancel_wait:
+                        logger.error(
+                            f"SCHED: Exception waiting for poller task cancellation in finally: {e_poll_cancel_wait}"
+                        )
+
+            if loop and not loop.is_closed():
+                logger.info(
+                    "SCHED: Shutting down remaining tasks in event loop (finally)."
+                )
+
+                # Ensure loop is stopped if it was running (e.g. if run_forever exited due to error)
+                if loop.is_running():
+                    logger.info(
+                        "SCHED: Loop was still running in finally, stopping it."
+                    )
+                    loop.stop()
+
+                # Gather all remaining tasks
+                pending_tasks = [
+                    t
+                    for t in asyncio.all_tasks(loop)
+                    if t is not self._poller_task and not t.done()
+                ]
+                if pending_tasks:
+                    logger.info(
+                        f"SCHED: {len(pending_tasks)} other pending tasks to cancel/gather."
+                    )
+                    for t in pending_tasks:
+                        t.cancel()
+                    try:
+                        # Run loop to process cancellations and gather results
+                        loop.run_until_complete(
+                            asyncio.gather(*pending_tasks, return_exceptions=True)
+                        )
+                        logger.info("SCHED: Gathered other pending tasks in finally.")
+                    except Exception as e_gather_final:
+                        logger.error(
+                            f"SCHED: Error during final gather in finally: {e_gather_final}"
+                        )
+
+                if hasattr(loop, "shutdown_asyncgens") and callable(
+                    loop.shutdown_asyncgens
+                ):
+                    try:
+                        logger.info("SCHED: Shutting down asyncgens in finally.")
                         loop.run_until_complete(loop.shutdown_asyncgens())
-                    
+                    except RuntimeError as e_gens_runtime:
+                        logger.warning(
+                            f"SCHED: Runtime error shutting down asyncgens in finally (may be ok if loop closed): {e_gens_runtime}"
+                        )
+                    except Exception as e_gens:
+                        logger.error(
+                            f"SCHED: Error shutting down asyncgens in finally: {e_gens}"
+                        )
+
+                if not loop.is_closed():
+                    logger.info("SCHED: Closing event loop in finally.")
                     loop.close()
-                    logger.debug("调度器线程的事件循环已关闭")
-            except Exception as e:
-                logger.error(f"关闭事件循环时出错: {e}")
-            
-            logger.debug("调度器线程已退出")
+                else:
+                    logger.info("SCHED: Event loop was already closed in finally.")
+
+            self._event_loop = None  # Clear the loop reference
+            self._poller_task = None  # Clear task reference
+            logger.info("调度器线程已退出 (end of _run_scheduler)")
 
     async def _execute_task(self, task_id: str, task: Dict[str, Any]) -> None:
         """
@@ -450,109 +530,87 @@ class TaskScheduler:
                             logger.debug(
                                 f"SCHED: [{task_id}] Preparing to AWAIT the coroutine object."
                             )
-                        await coro
-                        if self.debug_mode:
-                            logger.debug(
-                                f"SCHED: [{task_id}] Successfully AWAITED the coroutine."
+                        try:
+                            # 使用超时来防止协程长时间运行
+                            # import asyncio # Already imported at top
+                            # 设置一个合理的超时时间，这里使用30分钟
+                            timeout = 30 * 60  # 30分钟
+                            try:
+                                await asyncio.wait_for(coro, timeout=timeout)
+                                if self.debug_mode:
+                                    logger.debug(
+                                        f"SCHED: [{task_id}] Successfully AWAITED the coroutine."
+                                    )
+                                logger.info(f"[{task_id}] 成功执行协程回调函数")
+                            except asyncio.TimeoutError:
+                                logger.error(
+                                    f"[{task_id}] 协程执行超时（超过{timeout}秒）"
+                                )
+                        except Exception as await_error:
+                            logger.error(
+                                f"[{task_id}] 等待协程执行时出错: {await_error}"
                             )
-                        logger.info(f"[{task_id}] 成功执行协程回调函数")
-                    else:
-                        logger.error(
-                            f"[{task_id}] 协程对象为空，无法执行 await."
-                        )  # Keep as error
-                        if self.debug_mode:
-                            logger.debug(
-                                f"SCHED: [{task_id}] Coroutine object is None after creation attempt, cannot await."
-                            )
+                            import traceback
 
+                            logger.error(
+                                f"[{task_id}] 协程执行错误详情: {traceback.format_exc()}"
+                            )
+                    else:
+                        logger.error(f"[{task_id}] 协程对象为None，无法执行")
                 else:
-                    logger.warning(
-                        f"[{task_id}] 任务回调不是协程函数，尝试直接执行"
-                    )  # Keep as warning
+                    # 如果不是协程函数，直接调用
                     if self.debug_mode:
                         logger.debug(
-                            f"SCHED: [{task_id}] Task callback is not a coroutine function, executing directly."
+                            f"SCHED: [{task_id}] Callback is NOT a coroutine function. Will call directly."
                         )
-                    callback()
-                    logger.info(f"[{task_id}] 成功执行非协程回调函数")
-            except Exception as callback_error:
-                logger.error(
-                    f"[{task_id}] 执行回调函数时出错: {callback_error}"
-                )  # Keep as error
+                    result = callback()
+                    if self.debug_mode:
+                        logger.debug(
+                            f"SCHED: [{task_id}] Successfully called regular function. Result: {result}"
+                        )
+                    logger.info(f"[{task_id}] 成功执行普通回调函数")
+            except Exception as call_error:
+                logger.error(f"[{task_id}] 执行回调函数时出错: {call_error}")
                 import traceback
 
-                logger.error(
-                    f"[{task_id}] 回调执行错误详情: {traceback.format_exc()}"
-                )  # Keep as error
-                raise
+                logger.error(f"[{task_id}] 执行错误详情: {traceback.format_exc()}")
+                if self.debug_mode:
+                    logger.debug(
+                        f"SCHED: [{task_id}] EXCEPTION during execution: {call_error}"
+                    )
 
+            # 计算执行时间
             execution_time = time.time() - execution_start
-            logger.info(f"[{task_id}] 定时任务执行完成，耗时: {execution_time:.2f}秒")
+            logger.info(f"[{task_id}] 任务执行完成，耗时: {execution_time:.2f}秒")
+            if self.debug_mode:
+                logger.debug(
+                    f"SCHED: [{task_id}] Task execution completed in {execution_time:.2f} seconds"
+                )
         except Exception as e:
-            logger.error(
-                f"[{task_id}] 执行定时任务的主体部分失败: {e}"
-            )  # Keep as error
+            logger.error(f"[{task_id}] 执行任务过程中出错: {e}")
             import traceback
 
-            logger.error(
-                f"[{task_id}] 任务主体执行错误详情: {traceback.format_exc()}"
-            )  # Keep as error
+            logger.error(f"[{task_id}] 任务执行错误详情: {traceback.format_exc()}")
+            if self.debug_mode:
+                logger.debug(f"SCHED: [{task_id}] EXCEPTION in _execute_task: {e}")
         finally:
-            if self.debug_mode:  # Make finally log debug
-                logger.debug(
-                    f"[{task_id}] _execute_task 执行完毕 (finally块)，事件循环 ID: {current_loop_id if current_loop_id else '未知'}"
-                )
-            # --- Update next run time logic (keep INFO for essential updates) ---
-            if task_id in self.tasks:
-                try:
-                    cron = task.get("cron")
-                    if not cron:
-                        from croniter import croniter
-
-                        cron_expression = task.get("cron_expression", "0 0 * * *")
-                        logger.warning(
-                            f"[{task_id}] cron对象丢失，使用表达式重新创建: {cron_expression}"
-                        )  # Keep warning
-                        import datetime
-
-                        current_time_dt_finally = datetime.datetime.now()
-                        cron = croniter(cron_expression, current_time_dt_finally)
-                        task["cron"] = cron
-
-                    import datetime
-
-                    next_run_datetime = cron.get_next(datetime.datetime)
-                    next_run = next_run_datetime.timestamp()
-                    task["next_run"] = next_run
-                    next_time = time.strftime(
-                        "%Y-%m-%d %H:%M:%S", time.localtime(next_run)
+            # 无论成功失败，都重置任务状态
+            try:
+                if task_id in self.tasks:
+                    self.tasks[task_id]["running"] = False
+                    if self.debug_mode:
+                        logger.debug(
+                            f"SCHED: [{task_id}] Reset task running state to False"
+                        )
+            except Exception as reset_error:
+                logger.error(f"[{task_id}] 重置任务状态时出错: {reset_error}")
+                if self.debug_mode:
+                    logger.debug(
+                        f"SCHED: [{task_id}] EXCEPTION when resetting task state: {reset_error}"
                     )
-                    task["running"] = False
-                    time_diff = next_run - time.time()
-                    hours = int(time_diff // 3600)
-                    minutes = int((time_diff % 3600) // 60)
-                    logger.info(
-                        f"[{task_id}] 更新任务下次执行时间: {next_time} (本地时间) (还有{hours}小时{minutes}分钟)"
-                    )  # Keep essential log
-                except Exception as e_update:
-                    logger.error(
-                        f"[{task_id}] 更新任务下次执行时间失败: {e_update}"
-                    )  # Keep error
-                    import traceback
 
-                    logger.error(
-                        f"[{task_id}] 更新时间错误详情: {traceback.format_exc()}"
-                    )  # Keep error
-                    task["next_run"] = time.time() + 3600
-                    task["running"] = False
-                    fallback_time = time.strftime(
-                        "%Y-%m-%d %H:%M:%S", time.localtime(task["next_run"])
-                    )
-                    logger.warning(
-                        f"[{task_id}] 已设置任务一小时后重试，时间: {fallback_time}"
-                    )  # Keep warning
-        if self.debug_mode:
-            logger.debug(f"SCHED: [{task_id}] _execute_task EXITED.")
+            if self.debug_mode:
+                logger.debug(f"SCHED: [{task_id}] _execute_task EXITED")
 
     async def send_to_session(
         self, session_id: str, message_text: str, image_path: Optional[str] = None

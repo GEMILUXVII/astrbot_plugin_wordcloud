@@ -1,11 +1,11 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.1-blueviolet?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.3.2-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
-  <img src="https://img.shields.io/badge/updated-2025--05--11-brightgreen?style=flat-square" alt="Last Updated">
+  <img src="https://img.shields.io/badge/updated-2025--05--12-brightgreen?style=flat-square" alt="Last Updated">
 </div>
 
 ## 📝 介绍
@@ -284,7 +284,7 @@ NATURAL_KEYWORDS = {
 
 ## 🖼️ 词云样例
 
-![Image](https://i.ibb.co/CKG5XPnC/wc-test.png)
+![Image](https://i.imgur.com/nWF5FQB.png)
 
 ## 📁 项目结构 (简化)
 
@@ -355,72 +355,52 @@ AstrBot/data/plugin_data/cloudrank/
     *   **原因**: 关键词未正确配置、关键词大小写或空格不匹配、或消息被识别为命令。
     *   **解决**: 确保消息格式完全匹配 `constant.py` 中定义的关键词，包括空格和标点符号。确保消息不以 `/` 开头，否则会被视为命令而非普通消息。
 
-## 🔄 更新日志 (Changelog)
+## 🔄 更新日志
 
-### v1.3.1
-- 📝 **完善日志**：
-  - 标准化日志输出，便于排查问题和监控运行状态
-- 🔄 **修复线程问题**：
-  - 解决重载时不能安全中止的警告
+#### v1.3.2（2025-05-12）
+**优化与修复：**
+- 确保每日词云和排行榜统计准确反映当天数据
+- 修复 `/wc force_daily`指令 `no attribute 'data_dir'`的问题
+- 修复每日词云可能无法正常生成的问题
+- 解决排行榜 SQL 查询和消息构建中的问题
+- 统一排行榜输出样式，修复会话ID格式错误
+- 新增用户统计方法，提升灵活性
 
-### v1.3.0
-- 🔧 **修复了Hot Reload导致的定时任务重复执行问题**：
-  - 添加了单例模式，确保每个上下文只有一个调度器实例
-  - 完善了资源释放机制，防止内存泄漏
-  - 优化了事件循环和线程管理
-- 🔒 **增强了线程安全性**：
-  - 添加了线程锁，防止并发操作导致的冲突
-  - 优化了文件操作时的同步方式
-- 🎨 **改进了词云生成过程**：
-  - 防止多线程同时生成相同词云
-  - 添加了等待机制，避免重复生成
-- 📝 **完善了日志记录**：
-  - 添加更详细的错误和状态日志
-  - 优化调试信息的输出
-- ⚡ **优化性能**：
-  - 减少CPU使用率，优化任务检查间隔
-  - 更高效的资源管理和回收
+#### v1.3.1（2025-05-11）
+**日志与线程改进：**
+- 标准化日志输出，便于问题排查
+- 解决线程重载警告，提升稳定性
 
-### v1.2.1
-- 🔄 更新自然语言关键词：
-  - 优化了关键词处理逻辑，提高了自然语言命令的稳定性
-- 📝 文档：
-  - 添加更多使用说明
+#### v1.3.0（2025-05-10）
+**性能与安全提升：**
+- 修复定时任务重复问题，优化资源管理
+- 增强线程安全性，改进词云生成过程
+- 完善日志记录，优化性能
 
-### v1.2.0
-- ⚠️ **行为变更**: 修改了 `enabled_group_list` 配置项的群聊启用逻辑。现在，如果此配置为空，则默认对所有群聊禁用词云功能。只有在列表中明确指定的群号才会启用词云。此前的行为是留空表示所有群聊均启用。相应更新了配置文件提示和文档说明。
+#### v1.2.1（2025-05-09）
+**关键词与文档更新：**
+- 添加自然语言关键词处理，提高命令稳定性
+- 完善文档，添加更多使用说明
 
-### v1.1.2
-- 🔧 **修复**: 解决了在非主线程（如定时任务）中生成词云时，因 Matplotlib 图形后端导致的 `RuntimeError: main thread is not in main loop` 错误。已显式设置 Matplotlib 后端为 'Agg'，以确保线程安全的图像生成。
+#### v1.2.0（2025-05-08）
+**配置逻辑调整：**
+- 修改群聊启用逻辑，更新配置文件提示
 
-### v1.1.1
-- 🔧 修复会话ID处理逻辑：
-  - 解决了群聊会话ID格式与AstrBot核心API不兼容的问题
-  - 为发送消息API添加正确的会话ID转换格式
-  - 修复了自动任务推送和排行榜功能在某些环境下的运行错误
-- 🚀 优化日志输出：
-  - 增加更详细的错误信息记录，方便问题排查
-  - 添加调试模式下的详细操作流程日志
-- 💾 改进数据处理：
-  - 标准化消息数量统计方法
+#### v1.1.2（2025-05-08）
+**线程安全修复：**
+- 解决非主线程生成词云时的 `RuntimeError`
 
-### v1.1.0
-- ✨ 更新插件名称：从"WordCloud"更名为"CloudRank"
-- 🔄 添加用户活跃度排行榜功能：
-  - 词云生成后自动显示群内活跃用户排行
-  - 支持配置排行榜显示人数和奖牌样式
-  - 展示用户名称和发言贡献度
-- 🛠️ 新增配置选项：
-  - `show_user_ranking`: 控制是否显示用户排行榜
-  - `ranking_user_count`: 设置排行榜显示的用户数量
-  - `ranking_medals`: 自定义排行榜奖牌表情符号
+#### v1.1.1（2025-05-08）
+**会话与日志优化：**
+- 修复会话ID处理逻辑，优化日志输出
 
-### v1.0.0
-- 🚀 初始版本发布
-- 📊 基础词云生成功能
-- 🕒 支持定时自动生成和手动触发生成
-- 🖼️ 多种视觉定制选项（背景颜色、配色方案、字体、形状）
-- ⚙️ 灵活的配置管理
+#### v1.1.0（2025-05-08）
+**功能扩展：**
+- 插件更名为 "CloudRank"，新增用户活跃度排行榜功能
+
+#### v1.0.0（2025-05-08）
+**初始发布：**
+- 发布基础词云生成功能，支持多种视觉定制和配置管理
 
 ## 📄 许可证
 

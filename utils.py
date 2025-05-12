@@ -384,7 +384,9 @@ def extract_group_id_from_session(session_id: str) -> Optional[str]:
     Args:
         session_id: 会话ID，支持多种格式:
                    - "aiocqhttp:GroupMessage:123456789"
+                   - "aiocqhttp:GroupMessage:0_123456789"
                    - "qqofficial:group:123456789"
+                   - "aiocqhttp_group_123456789"
                    - "123456789"（纯群号）
                    - 其他可能的格式
 
@@ -401,6 +403,15 @@ def extract_group_id_from_session(session_id: str) -> Optional[str]:
             logger.debug(f"会话ID是纯数字，直接作为群号: {session_id}")
             return session_id
 
+        # 处理 "platform_group_groupid" 格式 (例如 "aiocqhttp_group_142443871")
+        if isinstance(session_id, str) and "_group_" in session_id:
+            parts = session_id.split("_group_")
+            if len(parts) == 2 and parts[1].isdigit():
+                logger.debug(
+                    f"从下划线分隔的会话ID '{session_id}' 提取到群号: {parts[1]}"
+                )
+                return parts[1]
+
         # 处理复杂格式会话ID
         if isinstance(session_id, str) and ":" in session_id:
             parts = session_id.split(":")
@@ -416,28 +427,35 @@ def extract_group_id_from_session(session_id: str) -> Optional[str]:
                     or "channel" in middle_part
                 ):
                     # 提取第三部分作为群号
-                    if parts[2].isdigit():
+                    third_part = parts[2]
+
+                    # 处理可能包含前缀的情况，如 "0_123456789"
+                    if "_" in third_part:
+                        group_id = third_part.split("_")[-1]
+                    else:
+                        group_id = third_part
+
+                    if group_id.isdigit():
                         logger.debug(
-                            f"从三段式会话ID '{session_id}' 提取到群号: {parts[2]}"
+                            f"从三段式会话ID '{session_id}' 提取到群号: {group_id}"
                         )
-                        return parts[2]
+                        return group_id
 
             # 2. 从会话ID的各部分中寻找可能的群号，优先选择最后一部分
             for i in range(len(parts) - 1, -1, -1):  # 从后向前查找
-                if parts[i].isdigit() and len(parts[i]) >= 5:  # 群号通常至少5位
-                    logger.debug(
-                        f"从会话ID '{session_id}' 的第{i + 1}部分提取到可能的群号: {parts[i]}"
-                    )
-                    return parts[i]
+                part = parts[i]
 
-            # 3. 检查会话ID是否包含群聊相关关键词
-            for i, part in enumerate(parts):
-                part_lower = part.lower()
-                if ("group" in part_lower or "群" in part_lower) and i < len(parts) - 1:
-                    next_part = parts[i + 1]
-                    if next_part.isdigit():
-                        logger.debug(f"从关键词 '{part}' 后找到群号: {next_part}")
-                        return next_part
+                # 处理可能包含前缀的情况，如 "0_123456789"
+                if "_" in part:
+                    potential_id = part.split("_")[-1]
+                else:
+                    potential_id = part
+
+                if potential_id.isdigit() and len(potential_id) >= 5:  # 群号通常至少5位
+                    logger.debug(
+                        f"从会话ID '{session_id}' 的第{i + 1}部分提取到可能的群号: {potential_id}"
+                    )
+                    return potential_id
 
         # 使用正则表达式提取会话ID中的任何数字序列
         import re
@@ -447,14 +465,15 @@ def extract_group_id_from_session(session_id: str) -> Optional[str]:
         if matches:
             # 找出最长的数字串
             longest_match = max(matches, key=len)
-            logger.debug(f"使用正则表达式从会话ID中提取到可能的群号: {longest_match}")
+            logger.debug(
+                f"使用正则表达式从会话ID '{session_id}' 提取到可能的群号: {longest_match}"
+            )
             return longest_match
 
-        # 所有方法都失败的情况
         logger.warning(f"无法从会话ID '{session_id}' 提取群号")
         return None
     except Exception as e:
-        logger.error(f"提取群号时发生错误: {e}")
+        logger.error(f"提取群号时出错: {e}")
         import traceback
 
         logger.error(f"提取群号错误详情: {traceback.format_exc()}")

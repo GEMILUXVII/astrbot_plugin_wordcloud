@@ -8,7 +8,7 @@ import datetime
 import shutil
 import traceback
 import threading
-from typing import Dict, List, Optional, Union, Tuple
+from typing import Dict, List, Optional, Tuple
 from collections import Counter
 from pathlib import Path
 
@@ -40,6 +40,7 @@ from ..constant import (
 _WORDCLOUD_LOCKS = {}
 _GLOBAL_LOCK = threading.Lock()
 
+
 # 确保当前词云生成请求唯一性的方法
 def _get_lock_for_key(key: str) -> threading.Lock:
     """
@@ -49,6 +50,7 @@ def _get_lock_for_key(key: str) -> threading.Lock:
         if key not in _WORDCLOUD_LOCKS:
             _WORDCLOUD_LOCKS[key] = threading.Lock()
         return _WORDCLOUD_LOCKS[key]
+
 
 class WordCloudGenerator:
     """词云生成器类"""
@@ -91,13 +93,13 @@ class WordCloudGenerator:
         try:
             # 先尝试通过StarTools获取数据目录，这是最可靠的方式
             data_dir = StarTools.get_data_dir(PLUGIN_NAME)
-            logger.debug(f"通过StarTools获取数据目录: {data_dir}")
+            logger.info(f"通过StarTools获取数据目录: {data_dir}")
         except Exception as e:
-            logger.error(f"通过StarTools获取数据目录失败: {e}")
+            logger.warning(f"通过StarTools获取数据目录失败: {e}")
             # 尝试使用全局DATA_DIR
             if DATA_DIR is not None:
                 data_dir = DATA_DIR
-                logger.debug(f"使用全局定义的DATA_DIR: {data_dir}")
+                logger.info(f"使用全局定义的DATA_DIR: {data_dir}")
             else:
                 # 无法获取数据目录，使用临时目录作为备用
                 temp_data_dir = PLUGIN_DIR / "temp_data"
@@ -119,7 +121,7 @@ class WordCloudGenerator:
         if not data_font_path.exists() and plugin_font_path.exists():
             try:
                 shutil.copy(plugin_font_path, data_font_path)
-                logger.debug(f"已将字体文件复制到数据目录: {data_font_path}")
+                logger.info(f"已将字体文件复制到数据目录: {data_font_path}")
             except Exception as e:
                 logger.warning(f"复制字体文件失败: {e}")
 
@@ -130,7 +132,7 @@ class WordCloudGenerator:
                 abs_font_path = PLUGIN_DIR / font_path
                 if os.path.exists(abs_font_path):
                     self.font_path = str(abs_font_path)
-                    logger.debug(f"使用插件目录中的字体: {self.font_path}")
+                    logger.info(f"使用插件目录中的字体: {self.font_path}")
                 else:
                     # 尝试相对于数据目录
                     data_relative_font_path = (
@@ -138,7 +140,7 @@ class WordCloudGenerator:
                     )
                     if os.path.exists(data_relative_font_path):
                         self.font_path = str(data_relative_font_path)
-                        logger.debug(f"使用数据目录中的字体: {self.font_path}")
+                        logger.info(f"使用数据目录中的字体: {self.font_path}")
                     else:
                         self.font_path = (
                             font_path  # 使用原始路径，可能是相对于当前工作目录
@@ -147,10 +149,10 @@ class WordCloudGenerator:
                 self.font_path = font_path  # 使用绝对路径
         elif data_font_path.exists():
             self.font_path = str(data_font_path)
-            logger.debug(f"使用数据目录中的字体: {self.font_path}")
+            logger.info(f"使用数据目录中的字体: {self.font_path}")
         elif plugin_font_path.exists():
             self.font_path = str(plugin_font_path)
-            logger.debug(f"使用插件目录中的字体: {self.font_path}")
+            logger.info(f"使用插件目录中的字体: {self.font_path}")
         else:
             self.font_path = None
             logger.warning("未找到有效字体文件，将使用系统默认字体")
@@ -169,7 +171,7 @@ class WordCloudGenerator:
                 if plugin_stopwords_path.exists() and not data_stopwords_path.exists():
                     try:
                         shutil.copy(plugin_stopwords_path, data_stopwords_path)
-                        logger.debug(
+                        logger.info(
                             f"已将停用词文件复制到数据目录: {data_stopwords_path}"
                         )
                         # 使用数据目录中的文件
@@ -230,23 +232,15 @@ class WordCloudGenerator:
         # 将圆内区域设为0（允许绘制文字），其余区域保持为255（不绘制文字）
         mask[circle] = 0
 
-        # 获取数据目录
-        if StarTools:
-            try:
-                data_dir = StarTools.get_data_dir("cloudrank")
-                if data_dir and data_dir.exists():
-                    logger.debug(f"通过StarTools获取数据目录: {data_dir}")
-                    self.data_dir = data_dir
-            except Exception as e:
-                logger.error(f"无法通过StarTools获取数据目录: {e}")
+        # 验证蒙版：记录圆内（值为0）像素的数量和总像素数
+        circle_pixels = np.sum(mask == 0)
+        total_pixels = size * size
+        circle_ratio = circle_pixels / total_pixels
 
-        # 生成圆形蒙版
-        logger.debug(f"生成圆形蒙版: 大小={self.width}x{self.height}, 半径={radius}")
-        
-        # 统计蒙版内像素数量，用于调试
-        circle_pixels = np.sum(mask)
-        total_pixels = self.width * self.height
-        logger.debug(f"圆内像素数量: {circle_pixels}, 总像素数: {total_pixels}, 比例: {circle_pixels/total_pixels:.2f}")
+        logger.info(f"生成圆形蒙版: 大小={size}x{size}, 半径={radius}")
+        logger.info(
+            f"圆内像素数量: {circle_pixels}, 总像素数: {total_pixels}, 比例: {circle_ratio:.2f}"
+        )
 
         return mask
 
@@ -256,19 +250,19 @@ class WordCloudGenerator:
         mask = None
         if self.shape == "circle":
             mask = self._create_circle_mask()
-            logger.debug(f"使用圆形蒙版，大小: {mask.shape}")
+            logger.info(f"使用圆形蒙版，大小: {mask.shape}")
 
-            # 保存蒙版到调试目录
-            if self._temp_data_dir:
+            # 保存蒙版图像以便调试
+            try:
+                # 使用临时数据目录
                 debug_dir = self._temp_data_dir / "debug"
                 debug_dir.mkdir(parents=True, exist_ok=True)
-                debug_mask_path = os.path.join(debug_dir, "circle_mask.png")
-                try:
-                    mask_img = Image.fromarray((mask * 255).astype(np.uint8))
-                    mask_img.save(debug_mask_path)
-                    logger.debug(f"保存蒙版图像用于调试: {debug_mask_path}")
-                except Exception as e:
-                    logger.warning(f"无法保存蒙版图像: {e}")
+                mask_img = Image.fromarray(mask)
+                mask_path = debug_dir / "circle_mask.png"
+                mask_img.save(mask_path)
+                logger.info(f"保存蒙版图像用于调试: {mask_path}")
+            except Exception as e:
+                logger.warning(f"保存蒙版图像失败: {e}")
 
         # 词云参数
         wordcloud_params = {
@@ -491,25 +485,27 @@ class WordCloudGenerator:
 
         if not word_counts:
             raise ValueError("无有效词频数据，无法生成词云")
-            
+
         # 获取图片存储路径
         image_path = get_image_path(session_id, timestamp)
-        
+
         # 创建锁的键名
         lock_key = f"wordcloud_{session_id}_{timestamp}"
-        
+
         # 获取锁对象
         lock = _get_lock_for_key(lock_key)
-        
+
         # 尝试获取锁
         if not lock.acquire(blocking=False):
-            logger.warning(f"已有其他线程正在生成相同的词云 {session_id}_{timestamp}，跳过本次生成")
-            
+            logger.warning(
+                f"已有其他线程正在生成相同的词云 {session_id}_{timestamp}，跳过本次生成"
+            )
+
             # 如果文件已存在，直接返回路径
             if image_path.exists():
                 logger.info(f"使用已存在的词云图片: {image_path}")
                 return str(image_path), image_path
-                
+
             # 等待一段时间看是否生成了
             try:
                 wait_start = time.time()
@@ -518,13 +514,13 @@ class WordCloudGenerator:
                     if image_path.exists():
                         logger.info(f"等待后找到了词云图片: {image_path}")
                         return str(image_path), image_path
-                
+
                 # 如果等待超时仍未生成，则抛出异常
                 raise ValueError("等待词云生成超时，请稍后再试")
             except Exception as e:
                 logger.error(f"等待词云生成时出错: {e}")
                 raise ValueError("词云生成被其他任务占用，请稍后再试")
-        
+
         try:
             # 生成词云
             self.wordcloud.generate_from_frequencies(word_counts)
@@ -545,7 +541,9 @@ class WordCloudGenerator:
 
             # 创建带有背景色的图表
             fig = plt.figure(
-                figsize=(fig_width, fig_height), facecolor=self.background_color, dpi=dpi
+                figsize=(fig_width, fig_height),
+                facecolor=self.background_color,
+                dpi=dpi,
             )
             plt.rcParams.update({"figure.autolayout": True})
             ax = plt.axes()
@@ -598,7 +596,9 @@ class WordCloudGenerator:
                         # 重新设置带边框的标题
                         plt.title(
                             title,
-                            fontproperties=font_prop if "font_prop" in locals() else None,
+                            fontproperties=font_prop
+                            if "font_prop" in locals()
+                            else None,
                             fontsize=16,
                             pad=10,
                             color=title_color,
