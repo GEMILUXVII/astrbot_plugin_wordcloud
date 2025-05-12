@@ -284,7 +284,7 @@ NATURAL_KEYWORDS = {
 
 ## 🖼️ 词云样例
 
-![Image](https://imgur.com/nWF5FQB)
+![Image](https://i.imgur.com/nWF5FQB.png)
 
 ## 📁 项目结构 (简化)
 
