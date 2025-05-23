@@ -351,6 +351,12 @@ AstrBot/data/plugin_data/cloudrank/
     4.  **重新加载/测试**:
         *   保存配置后，建议重新加载插件或重启 AstrBot (如果插件管理界面支持热重载，则可能无需重启)。
         *   然后尝试生成一个词云 (例如使用 `/wc test` 命令) 来查看自定义形状的效果。
+*   **自定义时区**:
+    *   插件允许您配置运行时使用的时区，这对于确保定时任务（如每日词云生成、CRON 表达式定义的任务）按照您期望的本地时间执行至关重要。
+    *   **配置方法**: 在 AstrBot 的插件管理界面，找到 "CloudRank" 插件的配置中的 **"自定义插件使用的时区 (IANA时区名称) (`timezone`)"** 选项。
+    *   **有效值**: 您需要输入一个有效的 IANA 时区名称，例如 `Asia/Shanghai` (默认值), `Europe/London`, `America/New_York`, 或者 `UTC`。
+    *   您可以参考 [维基百科的时区列表](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) 或通过 Python 的 `pytz.all_timezones` (如果您熟悉 Python 环境) 来查找合适的时区名称。
+    *   **影响范围**: 此设置会影响所有与时间相关的调度，包括每日词云的生成时间和 CRON 任务的触发时间。
 
 ## ⚠️ 注意事项
 
