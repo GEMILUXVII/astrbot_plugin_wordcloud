@@ -405,9 +405,9 @@ AstrBot/data/plugin_data/cloudrank/
 
 **新功能与改进：**
 
-- 新增 `timezone` 配置项，允许用户为插件任务自定义时区，并添加 `pytz` 依赖。
-- 新增 `custom_mask_path` 配置项，允许用户指定自定义图片作为词云形状蒙版。
-- 新增 `include_bot_messages` 配置项，允许用户选择是否将机器人自身发送的消息计入词云统计。
+- 新增 `timezone` 配置项，允许用户为插件任务自定义时区
+- 新增 `custom_mask_path` 配置项，允许用户指定自定义图片作为词云形状蒙版
+- 新增 `include_bot_messages` 配置项，允许用户选择是否将机器人自身发送的消息计入词云统计
 
 #### v1.3.2（2025-05-12）
 
