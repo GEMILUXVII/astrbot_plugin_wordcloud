@@ -10,6 +10,7 @@ import datetime
 from typing import Dict, Any, Callable, Optional, Set, List
 import inspect
 import traceback
+import pytz
 
 from croniter import croniter
 import astrbot.api.message_components as Comp
@@ -28,7 +29,11 @@ class TaskScheduler:
     """
 
     def __init__(
-        self, context, main_loop: asyncio.AbstractEventLoop, debug_mode: bool = False
+        self,
+        context,
+        main_loop: asyncio.AbstractEventLoop,
+        debug_mode: bool = False,
+        timezone: pytz.BaseTzInfo = pytz.utc,
     ):
         """
         初始化定时任务调度器
@@ -37,6 +42,7 @@ class TaskScheduler:
             context: AstrBot上下文
             main_loop: 主事件循环的引用
             debug_mode: 是否启用调试模式
+            timezone: 时区对象
         """
         # 检查是否有同一个上下文的调度器实例
         global _SCHEDULER_INSTANCES
@@ -58,6 +64,7 @@ class TaskScheduler:
                     self.thread = existing_scheduler.thread
                     self.main_loop = existing_scheduler.main_loop
                     self.debug_mode = existing_scheduler.debug_mode
+                    self.timezone = getattr(existing_scheduler, "timezone", pytz.utc)
                     self._event_loop = getattr(existing_scheduler, "_event_loop", None)
                     self._poller_task = getattr(
                         existing_scheduler, "_poller_task", None
@@ -74,6 +81,7 @@ class TaskScheduler:
             self.thread = None
             self.main_loop = main_loop
             self.debug_mode = debug_mode
+            self.timezone = timezone
             self._event_loop: Optional[asyncio.AbstractEventLoop] = None
             self._poller_task: Optional[asyncio.Task] = None
 
@@ -81,7 +89,7 @@ class TaskScheduler:
             _SCHEDULER_INSTANCES[context_id] = self
 
             logger.info(
-                f"TaskScheduler initialized with main loop ID: {id(self.main_loop)}, Debug Mode: {self.debug_mode}"
+                f"TaskScheduler initialized with main loop ID: {id(self.main_loop)}, Debug Mode: {self.debug_mode}, Timezone: {self.timezone}"
             )
 
     def add_task(self, cron_expression: str, callback, task_id: str) -> bool:
@@ -106,46 +114,42 @@ class TaskScheduler:
                 logger.error(f"无效的cron表达式: {cron_expression}")
                 return False
 
-            # 获取时区信息
-            timezone_offset = -time.timezone // 3600  # 转换为小时
+            # 获取当前时间，使用配置的时区
+            current_time_dt = datetime.datetime.now(self.timezone)
             logger.info(
-                f"系统时区信息: UTC{'+' if timezone_offset >= 0 else ''}{timezone_offset}"
-            )
-
-            # 创建croniter对象
-            current_time_dt = datetime.datetime.now()
-            logger.info(
-                f"当前本地时间: {current_time_dt.strftime('%Y-%m-%d %H:%M:%S')}"
+                f"当前配置时区 ({self.timezone}) 时间: {current_time_dt.strftime('%Y-%m-%d %H:%M:%S %Z%z')}"
             )
 
             try:
+                # 创建croniter对象时，如果datetime对象有时区信息，croniter会使用它
                 cron = croniter(cron_expression, current_time_dt)
 
-                # 获取下一次执行时间
+                # 获取下一次执行时间 (datetime对象，带有时区)
                 next_run_datetime = cron.get_next(datetime.datetime)
-                next_run = next_run_datetime.timestamp()  # 转为时间戳
+                next_run_timestamp = next_run_datetime.timestamp()  # 转为时间戳 (UTC)
 
                 # 输出详细的时间信息以便调试
-                next_run_str = datetime.datetime.fromtimestamp(next_run).strftime(
-                    "%Y-%m-%d %H:%M:%S"
+                next_run_str_local = next_run_datetime.astimezone(self.timezone).strftime(
+                    "%Y-%m-%d %H:%M:%S %Z%z"
                 )
-                logger.info(f"任务 {task_id} 下次执行时间: {next_run_str} (本地时间)")
+                logger.info(f"任务 {task_id} 下次执行时间: {next_run_str_local} (时区: {self.timezone})")
+
                 # 添加任务
                 self.tasks[task_id] = {
                     "cron_expression": cron_expression,
                     "callback": callback,
-                    "next_run": next_run,
-                    "cron": cron,
+                    "next_run": next_run_timestamp, # Store as UTC timestamp
+                    "cron_ref_dt": current_time_dt, # Store reference datetime used for croniter
                     "running": False,
                 }
 
                 logger.info(
-                    f"成功添加定时任务: {task_id}, 下次执行时间: {next_run_str}"
+                    f"成功添加定时任务: {task_id}, 下次执行时间: {next_run_str_local}"
                 )
                 return True
 
             except Exception as e:
-                logger.error(f"创建cron对象失败: {e}")
+                logger.error(f"创建cron对象或计算下次运行时间失败: {e}")
                 logger.error(f"错误详情: {traceback.format_exc()}")
                 return False
 
@@ -248,99 +252,67 @@ class TaskScheduler:
 
         try:
             while self.running:
-                now = time.time()
-                current_time_str = time.strftime(
-                    "%Y-%m-%d %H:%M:%S", time.localtime(now)
-                )
+                current_time = time.time() # This is a UTC timestamp
 
-                # Heartbeat log
-                if now - last_heartbeat >= heartbeat_interval:
-                    logger.info(
-                        f"SCHED ASYNC_POLLER: Heartbeat. Current time: {current_time_str}, Task count: {len(self.tasks)}"
+                if self.debug_mode and current_time - last_heartbeat > heartbeat_interval:
+                    logger.debug(
+                        f"SCHED ASYNC_POLLER: Heartbeat. Current UTC time: {datetime.datetime.utcfromtimestamp(current_time).strftime('%Y-%m-%d %H:%M:%S UTC')}"
                     )
-                    last_heartbeat = now
+                    last_heartbeat = current_time
 
-                for task_id, task_details in list(self.tasks.items()):
-                    try:
-                        if not all(
-                            k in task_details
-                            for k in ["next_run", "running", "cron", "callback"]
-                        ):
-                            missing_keys = [
-                                k
-                                for k in ["next_run", "running", "cron", "callback"]
-                                if k not in task_details
-                            ]
-                            logger.warning(
-                                f"SCHED ASYNC_POLLER: Task '{task_id}' missing keys: {missing_keys}"
-                            )
-                            continue
+                for task_id, task_info in list(self.tasks.items()): # Use list() for safe iteration if modifying
+                    if task_info.get("running", False):
+                        continue
 
-                        if (
-                            now >= task_details["next_run"]
-                            and not task_details["running"]
-                        ):
-                            exec_time_str = time.strftime(
-                                "%Y-%m-%d %H:%M:%S",
-                                time.localtime(task_details["next_run"]),
-                            )
-                            logger.info(
-                                f"SCHED ASYNC_POLLER: Triggering task '{task_id}'. Scheduled: {exec_time_str}, Current: {current_time_str}"
-                            )
-
-                            task_details["running"] = True
-                            task_details["next_run"] = (
-                                task_details["cron"]
-                                .get_next(datetime.datetime)
-                                .timestamp()
-                            )
-
-                            future = loop.create_task(
-                                self._execute_task(task_id, task_details)
-                            )
-
-                            current_task_id_for_callback = task_id
-
-                            def _task_done_callback(f):
-                                try:
-                                    f.result()
-                                    logger.info(
-                                        f"SCHED ASYNC_POLLER: Task '{current_task_id_for_callback}' (from create_task) completed successfully."
-                                    )
-                                except asyncio.CancelledError:
-                                    logger.warning(
-                                        f"SCHED ASYNC_POLLER: Task '{current_task_id_for_callback}' (from create_task) was cancelled."
-                                    )
-                                except Exception as e_callback:
-                                    logger.error(
-                                        f"SCHED ASYNC_POLLER: Exception in executed task '{current_task_id_for_callback}': {e_callback}"
-                                    )
-                                    logger.error(
-                                        f"SCHED ASYNC_POLLER: Traceback for task '{current_task_id_for_callback}': {traceback.format_exc()}"
-                                    )
-
-                            future.add_done_callback(_task_done_callback)
-
-                    except Exception as e_inner_loop:
-                        logger.error(
-                            f"SCHED ASYNC_POLLER: Error in task processing loop for task_id '{task_id}': {e_inner_loop}"
+                    if current_time >= task_info["next_run"]:
+                        if self.debug_mode:
+                            logger.debug(f"SCHED ASYNC_POLLER: Executing task {task_id}")
+                        
+                        # Schedule the task execution in the main event loop
+                        asyncio.run_coroutine_threadsafe(
+                            self._execute_task(task_id, task_info), self.main_loop
                         )
-                        logger.error(
-                            f"SCHED ASYNC_POLLER: Traceback: {traceback.format_exc()}"
-                        )
-                        if task_id in self.tasks and isinstance(
-                            self.tasks.get(task_id), dict
-                        ):
-                            self.tasks[task_id]["running"] = False
+                        
+                        # Update next run time for this task
+                        try:
+                            # Re-initialize croniter with the reference datetime object that includes timezone
+                            # This ensures that DST transitions are handled correctly by croniter.
+                            # If task_info["cron_ref_dt"] is naive, convert it to aware using self.timezone
+                            ref_dt = task_info["cron_ref_dt"]
+                            if ref_dt.tzinfo is None: # Should not happen if add_task is correct
+                                ref_dt = self.timezone.localize(ref_dt)
+                            
+                            # It's better to advance from the *scheduled* `next_run_datetime` rather than `now`
+                            # to avoid drift if the poller is slightly delayed.
+                            # Convert the stored `next_run` (UTC timestamp) back to a datetime object with our timezone.
+                            last_scheduled_run_dt = datetime.datetime.fromtimestamp(task_info["next_run"], self.timezone)
+
+                            # Ensure croniter uses the correct timezone context by providing an aware datetime object
+                            cron = croniter(task_info["cron_expression"], last_scheduled_run_dt)
+                            next_run_datetime_aware = cron.get_next(datetime.datetime)
+                            task_info["next_run"] = next_run_datetime_aware.timestamp() # Store as UTC timestamp
+                            task_info["cron_ref_dt"] = next_run_datetime_aware # Update reference dt
+
+                            if self.debug_mode:
+                                next_run_str_local = next_run_datetime_aware.astimezone(self.timezone).strftime(
+                                    "%Y-%m-%d %H:%M:%S %Z%z"
+                                )
+                                logger.debug(
+                                    f"SCHED ASYNC_POLLER: Task {task_id} rescheduled. Next run: {next_run_str_local}"
+                                )
+                        except Exception as e:
+                            logger.error(f"SCHED ASYNC_POLLER: Error rescheduling task {task_id}: {e} - Task will be removed.")
+                            logger.error(f"Details: {traceback.format_exc()}")
+                            self.tasks.pop(task_id, None) # Remove problematic task
 
                 await asyncio.sleep(task_check_interval)
-
-            logger.info("SCHED ASYNC_POLLER: Exiting as self.running is False.")
         except asyncio.CancelledError:
-            logger.info("SCHED ASYNC_POLLER: Poller task was cancelled.")
-        except Exception as e_poller:
-            logger.error(f"SCHED ASYNC_POLLER: Poller task crashed: {e_poller}")
-            logger.error(f"SCHED ASYNC_POLLER: Traceback: {traceback.format_exc()}")
+            logger.info("SCHED ASYNC_POLLER: Async poller task cancelled.")
+        except Exception as e:
+            logger.error(f"SCHED ASYNC_POLLER: Error in async poller: {e}")
+            logger.error(f"Details: {traceback.format_exc()}")
+        finally:
+            logger.info("SCHED ASYNC_POLLER: Async poller task stopped.")
 
     def _run_scheduler(self) -> None:
         """Runs the scheduler in a dedicated thread with its own asyncio event loop."""

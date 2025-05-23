@@ -11,6 +11,12 @@
         "hint": "使用标准cron格式（分 时 日 月 周），默认每天晚上8点执行",
         "default": "0 20 * * *"
     },
+    "timezone": {
+        "type": "string",
+        "description": "自定义插件使用的时区 (IANA时区名称)",
+        "hint": "请输入有效的IANA时区名称，例如：Asia/Shanghai, Europe/London, America/New_York, UTC。您可以参考维基百科的列表 (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) 或通过 Python 的 pytz.all_timezones 获取。这将用于确定每日生成词云和cron表达式的本地时间。",
+        "default": "Asia/Shanghai"
+    },
     "daily_generate_enabled": {
         "type": "bool",
         "description": "是否启用每日词云生成",
@@ -78,12 +84,24 @@
         "hint": "可使用相对路径或绝对路径。留空使用默认停用词。",
         "default": "stop_words.txt"
     },
+    "include_bot_messages": {
+        "type": "bool",
+        "description": "是否将机器人自身的消息计入词云统计",
+        "hint": "开启后，机器人自己发送的消息也会被用于生成词云。默认为关闭。",
+        "default": false
+    },
     "shape": {
         "type": "string",
         "description": "词云形状",
-        "hint": "决定词云的整体形状",
-        "default": "circle",
-        "options": ["circle", "rectangle"]
+        "hint": "决定词云的整体形状。如果设置了自定义蒙版路径，则此选项无效。",
+        "default": "rectangle",
+        "options": ["rectangle", "circle", "diamond", "triangle_up"]
+    },
+    "custom_mask_path": {
+        "type": "string",
+        "description": "自定义蒙版图片路径",
+        "hint": "提供一个图片文件的路径作为词云的形状蒙版。图片中白色区域将被忽略，非白色区域将用于绘制词语。如果设置了此路径，则预设的'形状'选项将无效。支持相对路径（相对于插件数据目录下的resources/images/子目录）或绝对路径。",
+        "default": ""
     },
     "show_user_ranking": {
         "type": "bool",

@@ -1,11 +1,11 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.2-blueviolet?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.3.3-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
-  <img src="https://img.shields.io/badge/updated-2025--05--12-brightgreen?style=flat-square" alt="Last Updated">
+  <img src="https://img.shields.io/badge/updated-2025--05--23-brightgreen?style=flat-square" alt="Last Updated">
 </div>
 
 ## 📝 介绍
@@ -21,11 +21,12 @@ CloudRank插件是一款用于 AstrBot 的插件，能够将群聊或私聊中�
     - **背景颜色**：自定义词云图片的背景色。
     - **配色方案**：选择不同的预设配色方案，改变词语的颜色分布。
     - **字体**：支持指定自定义字体文件，解决特殊字符显示问题或实现特定视觉风格。
-    - **形状**：目前支持圆形和矩形两种词云形状。
+    - **形状**：支持预设形状（如圆形、矩形、菱形、三角形），更重要的是支持通过 **自定义蒙版图片 (`custom_mask_path`)** 来定义任意词云轮廓。
 - ⚙️ **灵活的配置管理**：
     - **群聊启用/禁用**：可以指定哪些群聊启用词云功能。
     - **词语过滤**：设置最小词长度、最大词数量。
     - **停用词**：支持自定义停用词列表，过滤常见但无意义的词语。
+    - **机器人消息统计**：可配置是否将机器人自身发送的消息计入词云统计 (`include_bot_messages`)。
 - 📊 **用户活跃度排行**：
     - 词云生成后自动显示群内活跃用户排行榜
     - 可自定义排行显示人数和奖牌样式
@@ -151,14 +152,28 @@ CloudRank插件是一款用于 AstrBot 的插件，能够将群聊或私聊中�
     <td><code>string</code></td>
     <td>停用词文件的路径</td>
     <td><code>stop_words.txt</code></td>
-    <td>指定一个文本文件，每行包含一个要忽略的词语。路径相对于插件 <code>resources/</code> 目录</td>
+    <td>指定一个文本文件，每行包含一个要忽略的词语。路径相对于插件 <code>resources/</code> 目录或绝对路径</td>
+  </tr>
+  <tr>
+    <td><code>include_bot_messages</code></td>
+    <td><code>bool</code></td>
+    <td>是否将机器人自身的消息计入词云统计</td>
+    <td><code>false</code></td>
+    <td><code>true</code> 时，机器人自己发送的消息也会被用于生成词云。默认为关闭</td>
   </tr>
   <tr>
     <td><code>shape</code></td>
     <td><code>string</code></td>
-    <td>词云的整体形状</td>
-    <td><code>circle</code></td>
-    <td>目前支持 <code>circle</code> (圆形) 和 <code>rectangle</code> (矩形)。未来可能支持自定义图片蒙版</td>
+    <td>词云的预设形状</td>
+    <td><code>rectangle</code></td>
+    <td>支持 <code>rectangle</code> (矩形), <code>circle</code> (圆形), <code>diamond</code> (菱形), <code>triangle_up</code> (上三角)。如果设置了下方的"自定义蒙版图片路径"，则此选项无效</td>
+  </tr>
+  <tr>
+    <td><code>custom_mask_path</code></td>
+    <td><code>string</code></td>
+    <td>自定义蒙版图片路径</td>
+    <td><code>&quot;&quot;</code> (空字符串)</td>
+    <td>提供一个图片文件的路径作为词云的形状蒙版。图片中白色区域将被忽略，非白色区域将用于绘制词语。如果设置了此路径，则预设的 '形状' 选项将无效。支持相对路径（相对于插件数据目录下的 <code>resources/images/</code> 子目录）或绝对路径</td>
   </tr>
   <tr>
     <td><code>show_user_ranking</code></td>
@@ -312,8 +327,9 @@ cloudrank/
 AstrBot/data/plugin_data/cloudrank/
 ├── resources/                # 资源文件目录
 │   ├── fonts/                # 字体文件目录（存放LXGWWenKai-Regular.ttf等字体）
+│   ├── images/               # 自定义蒙版图片存放目录 (例如 my_mask.png)
 │   └── stop_words.txt        # 自定义停用词列表
-├── images/                   # 生成的词云图片缓存目录
+├── images/                   # 生成的词云图片缓存目录 (这是插件输出图片的目录)
 └── debug/                    # 调试信息目录（仅在排查问题时使用）
 ```
 
@@ -321,6 +337,20 @@ AstrBot/data/plugin_data/cloudrank/
 
 *   **自定义停用词**: 编辑位于数据目录的 `resources/stop_words.txt` 文件，每行添加一个不想出现在词云中的词。
 *   **自定义字体**: 将字体文件 (如 `.ttf`, `.otf`) 放入数据目录 `resources/fonts/` 下，然后在插件配置中将 `font_path` 设置为该字体文件的名称 (例如 `my_font.ttf`)。如果字体在系统其他位置，可以设置绝对路径。
+*   **自定义词云形状 (使用蒙版图片)**:
+    1.  **准备蒙版图片**:
+        *   创建一个图像文件 (推荐使用 `.png` 格式，背景透明更佳，但 `.jpg` 等常见格式也可以)。
+        *   在图片中，**您希望词语出现的区域应该是深色（如黑色）**，而**希望留空的背景区域应该是浅色（如白色）**。词云生成器会将图片中接近纯黑色的部分作为词语填充的有效区域，纯白色部分则会忽略。
+        *   图片尺寸会影响最终词云的分辨率和细节，但插件会尝试适应。一个几百像素到一千像素宽高的图片通常效果不错。
+    2.  **放置蒙版图片**:
+        *   将您的蒙版图片文件（例如 `my_mask.png`）放置到插件的数据目录下的 `resources/images/` 子目录中。这个目录的完整路径通常是 `AstrBot/data/plugin_data/cloudrank/resources/images/`。如果该 `images` 子目录不存在，插件在启动时会自动创建它。
+    3.  **配置插件**:
+        *   在 AstrBot 的插件管理界面，找到 "CloudRank" 插件的配置。
+        *   在 **"自定义蒙版图片路径 (`custom_mask_path`)"** 配置项中，填入您放置的图片文件名，例如 `my_mask.png`。
+        *   **注意**: 如果您在这里配置了有效的图片路径，那么预设的 "词云的预设形状 (`shape`)" 配置项将会被忽略。
+    4.  **重新加载/测试**:
+        *   保存配置后，建议重新加载插件或重启 AstrBot (如果插件管理界面支持热重载，则可能无需重启)。
+        *   然后尝试生成一个词云 (例如使用 `/wc test` 命令) 来查看自定义形状的效果。
 
 ## ⚠️ 注意事项
 
@@ -356,6 +386,12 @@ AstrBot/data/plugin_data/cloudrank/
     *   **解决**: 确保消息格式完全匹配 `constant.py` 中定义的关键词，包括空格和标点符号。确保消息不以 `/` 开头，否则会被视为命令而非普通消息。
 
 ## 🔄 更新日志
+
+#### v1.3.3（2025-05-23）
+**新功能与改进：**
+- 新增 `custom_mask_path` 配置项，允许用户指定自定义图片作为词云形状蒙版
+- 新增 `include_bot_messages` 配置项，允许用户选择是否将机器人自身发送的消息计入词云统计
+- 更新 README 和相关配置说明，反映最新功能
 
 #### v1.3.2（2025-05-12）
 **优化与修复：**

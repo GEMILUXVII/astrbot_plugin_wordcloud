@@ -11,6 +11,7 @@ import asyncio
 from typing import List, Dict, Any, Optional, Tuple, Set
 from pathlib import Path
 import importlib
+import pytz # Added import
 
 from astrbot.api import logger
 from astrbot.api import AstrBotConfig
@@ -56,7 +57,7 @@ from . import constant as constant_module
     "CloudRank",
     "GEMILUXVII",
     "词云与排名插件 (CloudRank) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。",
-    "1.3.2",
+    "1.3.3",
     "https://github.com/GEMILUXVII/astrbot_plugin_cloudrank",
 )
 class WordCloudPlugin(Star):
@@ -73,6 +74,19 @@ class WordCloudPlugin(Star):
         if self.debug_mode:
             logger.warning("WordCloud插件调试模式已启用，将输出详细日志。")
         # -----------------------
+
+        # --- 读取时区配置 ---
+        self.timezone_str = self.config.get("timezone", "Asia/Shanghai")
+        try:
+            import pytz
+            self.timezone = pytz.timezone(self.timezone_str)
+            logger.info(f"WordCloud插件已加载时区设置: {self.timezone_str}")
+        except Exception as e:
+            logger.error(f"加载时区 '{self.timezone_str}' 失败: {e}，将使用默认UTC时区。")
+            import pytz
+            self.timezone = pytz.utc
+            self.timezone_str = "UTC"
+        # --------------------
 
         # --- 获取主事件循环 ---
         try:
@@ -123,7 +137,7 @@ class WordCloudPlugin(Star):
 
         # --- 将主循环和调试模式传递给 Scheduler ---
         self.scheduler = TaskScheduler(
-            context, main_loop=self.main_loop, debug_mode=self.debug_mode
+            context, main_loop=self.main_loop, debug_mode=self.debug_mode, timezone=self.timezone
         )
         # -----------------------------------------
         logger.info("任务调度器初始化完成")
@@ -189,9 +203,13 @@ class WordCloudPlugin(Star):
             fonts_dir = resources_dir / "fonts"
             fonts_dir.mkdir(exist_ok=True)
 
-            # 创建图片目录
-            images_dir = data_dir / "images"
-            images_dir.mkdir(exist_ok=True)
+            # 创建用于存放自定义蒙版图片的目录 (在resources下)
+            custom_masks_dir = resources_dir / "images"
+            custom_masks_dir.mkdir(exist_ok=True)
+
+            # 创建图片目录 (这个是用于存放生成的词云图，在数据目录顶层)
+            output_images_dir = data_dir / "images"
+            output_images_dir.mkdir(exist_ok=True)
 
             # 创建调试目录
             debug_dir = data_dir / "debug"
@@ -297,7 +315,8 @@ class WordCloudPlugin(Star):
         min_word_length = self.config.get("min_word_length", 2)
         background_color = self.config.get("background_color", "white")
         colormap = self.config.get("colormap", "viridis")
-        shape = self.config.get("shape", "circle")
+        shape = self.config.get("shape", "rectangle") # 默认形状为矩形
+        custom_mask_path_config = self.config.get("custom_mask_path", "") # 读取自定义蒙版路径配置
 
         # 获取字体路径，如果配置中没有，则使用默认值
         font_path = self.config.get("font_path", "")
@@ -355,6 +374,7 @@ class WordCloudPlugin(Star):
             if os.path.exists(stop_words_file)
             else None,
             shape=shape,
+            custom_mask_path=custom_mask_path_config # 传递自定义蒙版路径
         )
 
         logger.info("词云生成器初始化完成")
@@ -513,11 +533,15 @@ class WordCloudPlugin(Star):
     async def record_message(self, event: AstrMessageEvent):
         """监听所有消息并记录用于后续词云生成"""
         try:
+            # 获取是否计入机器人消息的配置
+            include_bot_msgs = self.config.get("include_bot_messages", False)
+
             # 跳过命令消息
             if event.message_str is not None and event.message_str.startswith("/"):
                 return
-            # 跳过机器人自身消息
-            if event.get_sender_id() == event.get_self_id():
+            
+            # 如果不计入机器人消息，则跳过机器人自身消息
+            if not include_bot_msgs and event.get_sender_id() == event.get_self_id():
                 return
 
             # 尝试匹配自然语言关键词
@@ -756,7 +780,7 @@ class WordCloudPlugin(Star):
             f"统计天数: {self.config.get('history_days', 7)}",
             f"背景颜色: {self.config.get('background_color', 'white')}",
             f"配色方案: {self.config.get('colormap', 'viridis')}",
-            f"形状: {self.config.get('shape', 'circle')}",
+            f"形状: {self.config.get('shape', 'rectangle')}",
         ]
 
         # 添加群聊配置信息
