@@ -476,8 +476,6 @@ AstrBot/data/plugin_data/cloudrank/
 
 本项目采用 [GNU Affero General Public License v3.0 (AGPL-3.0)](https://www.gnu.org/licenses/agpl-3.0.html) 许可证。
 
----
-
 ## 🙏 致谢
 
 本项目基于或参考了以下开源项目:
