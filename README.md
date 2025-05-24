@@ -480,5 +480,5 @@ AstrBot/data/plugin_data/cloudrank/
 
 本项目基于或参考了以下开源项目:
 
-- [AstrBot](https://github.com/shandianlala/AstrBot) - 提供强大的聊天机器人平台支持
+- [AstrBot](https://github.com/AstrBotDevs/AstrBot) - 提供强大的聊天机器人平台支持
 - [LXGW WenKai](https://github.com/lxgw/LxgwWenKai) - 霞鹜文楷字体项目，提供了美观的开源中文字体
