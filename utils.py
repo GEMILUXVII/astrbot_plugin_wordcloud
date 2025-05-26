@@ -336,17 +336,26 @@ def segment_text(
     if stop_words is None:
         stop_words = DEFAULT_STOPWORDS
 
+    # 预处理文本：移除@用户提及
+    import re
+    # 移除@用户提及，支持多种格式：@username、@用户名、@123456等
+    text = re.sub(r'@[^\s]+', '', text)
+    # 移除多余的空白字符
+    text = re.sub(r'\s+', ' ', text).strip()
+
     # 使用jieba进行分词
     words = jieba.lcut(text)
 
     # 过滤停用词和短词
     filtered_words = []
     for word in words:
+        word_stripped = word.strip()
         if (
-            len(word.strip()) >= min_length
+            len(word_stripped) >= min_length
             and word not in stop_words
             and not word.isdigit()  # 过滤纯数字
             and not all(c.isascii() and not c.isalpha() for c in word)  # 过滤纯符号
+            and not word_stripped.startswith('@')  # 额外保护：过滤任何以@开头的词
         ):
             filtered_words.append(word)
 

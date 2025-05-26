@@ -1,11 +1,11 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.3-blueviolet?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.3.4-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
-  <img src="https://img.shields.io/badge/updated-2025--05--23-brightgreen?style=flat-square" alt="Last Updated">
+  <img src="https://img.shields.io/badge/updated-2025--05--27-brightgreen?style=flat-square" alt="Last Updated">
 </div>
 
 ## 📝 介绍
@@ -400,6 +400,14 @@ AstrBot/data/plugin_data/cloudrank/
   - **解决**: 确保消息格式完全匹配 `constant.py` 中定义的关键词，包括空格和标点符号。确保消息不以 `/` 开头，否则会被视为命令而非普通消息。
 
 ## 🔄 更新日志
+
+#### v1.3.4（2025-05-27）
+
+**重要修复：**
+
+- 修复词云生成时包含群成员@提及 ID 的问题
+- 在`segment_text`函数中添加正则表达式过滤，自动移除@用户提及内容
+- 确保词云统计结果更加准确和美观，不再出现如"@6emasvii"等用户 ID
 
 #### v1.3.3（2025-05-23）
 
