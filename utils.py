@@ -6,7 +6,7 @@ import os
 import time
 import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple, Set
+from typing import List, Optional, Tuple, Set
 
 import jieba
 from astrbot.api import logger
@@ -243,7 +243,7 @@ def get_image_path(session_id: str, timestamp: Optional[int] = None) -> Path:
 
             data_dir = StarTools.get_data_dir(PLUGIN_NAME)
             logger.info(f"通过StarTools获取数据目录: {data_dir}")
-        except Exception as e:
+        except Exception:
             # 使用临时目录作为备用
             from pathlib import Path
 
@@ -293,7 +293,7 @@ def get_daily_image_path(session_id: str, date: Optional[datetime.date] = None) 
 
             data_dir = StarTools.get_data_dir(PLUGIN_NAME)
             logger.info(f"通过StarTools获取数据目录: {data_dir}")
-        except Exception as e:
+        except Exception:
             # 使用临时目录作为备用
             from pathlib import Path
 
@@ -338,10 +338,11 @@ def segment_text(
 
     # 预处理文本：移除@用户提及
     import re
+
     # 移除@用户提及，支持多种格式：@username、@用户名、@123456等
-    text = re.sub(r'@[^\s]+', '', text)
+    text = re.sub(r"@[^\s]+", "", text)
     # 移除多余的空白字符
-    text = re.sub(r'\s+', ' ', text).strip()
+    text = re.sub(r"\s+", " ", text).strip()
 
     # 使用jieba进行分词
     words = jieba.lcut(text)
@@ -355,7 +356,7 @@ def segment_text(
             and word not in stop_words
             and not word.isdigit()  # 过滤纯数字
             and not all(c.isascii() and not c.isalpha() for c in word)  # 过滤纯符号
-            and not word_stripped.startswith('@')  # 额外保护：过滤任何以@开头的词
+            and not word_stripped.startswith("@")  # 额外保护：过滤任何以@开头的词
         ):
             filtered_words.append(word)
 

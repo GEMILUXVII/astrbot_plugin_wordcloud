@@ -2,10 +2,7 @@
 聊天历史记录管理器
 """
 
-import json
-import time
-import datetime
-from typing import List, Dict, Any, Optional, Tuple, Set
+from typing import List, Dict, Any, Optional, Tuple
 import traceback
 
 from astrbot.api import logger

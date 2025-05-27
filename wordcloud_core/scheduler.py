@@ -7,8 +7,7 @@ import threading
 import time
 import os
 import datetime
-from typing import Dict, Any, Callable, Optional, Set, List
-import inspect
+from typing import Dict, Any, Optional
 import traceback
 import pytz
 
@@ -129,17 +128,19 @@ class TaskScheduler:
                 next_run_timestamp = next_run_datetime.timestamp()  # 转为时间戳 (UTC)
 
                 # 输出详细的时间信息以便调试
-                next_run_str_local = next_run_datetime.astimezone(self.timezone).strftime(
-                    "%Y-%m-%d %H:%M:%S %Z%z"
+                next_run_str_local = next_run_datetime.astimezone(
+                    self.timezone
+                ).strftime("%Y-%m-%d %H:%M:%S %Z%z")
+                logger.info(
+                    f"任务 {task_id} 下次执行时间: {next_run_str_local} (时区: {self.timezone})"
                 )
-                logger.info(f"任务 {task_id} 下次执行时间: {next_run_str_local} (时区: {self.timezone})")
 
                 # 添加任务
                 self.tasks[task_id] = {
                     "cron_expression": cron_expression,
                     "callback": callback,
-                    "next_run": next_run_timestamp, # Store as UTC timestamp
-                    "cron_ref_dt": current_time_dt, # Store reference datetime used for croniter
+                    "next_run": next_run_timestamp,  # Store as UTC timestamp
+                    "cron_ref_dt": current_time_dt,  # Store reference datetime used for croniter
                     "running": False,
                 }
 
@@ -252,58 +253,77 @@ class TaskScheduler:
 
         try:
             while self.running:
-                current_time = time.time() # This is a UTC timestamp
+                current_time = time.time()  # This is a UTC timestamp
 
-                if self.debug_mode and current_time - last_heartbeat > heartbeat_interval:
+                if (
+                    self.debug_mode
+                    and current_time - last_heartbeat > heartbeat_interval
+                ):
                     logger.debug(
                         f"SCHED ASYNC_POLLER: Heartbeat. Current UTC time: {datetime.datetime.utcfromtimestamp(current_time).strftime('%Y-%m-%d %H:%M:%S UTC')}"
                     )
                     last_heartbeat = current_time
 
-                for task_id, task_info in list(self.tasks.items()): # Use list() for safe iteration if modifying
+                for task_id, task_info in list(
+                    self.tasks.items()
+                ):  # Use list() for safe iteration if modifying
                     if task_info.get("running", False):
                         continue
 
                     if current_time >= task_info["next_run"]:
                         if self.debug_mode:
-                            logger.debug(f"SCHED ASYNC_POLLER: Executing task {task_id}")
-                        
+                            logger.debug(
+                                f"SCHED ASYNC_POLLER: Executing task {task_id}"
+                            )
+
                         # Schedule the task execution in the main event loop
                         asyncio.run_coroutine_threadsafe(
                             self._execute_task(task_id, task_info), self.main_loop
                         )
-                        
+
                         # Update next run time for this task
                         try:
                             # Re-initialize croniter with the reference datetime object that includes timezone
                             # This ensures that DST transitions are handled correctly by croniter.
                             # If task_info["cron_ref_dt"] is naive, convert it to aware using self.timezone
                             ref_dt = task_info["cron_ref_dt"]
-                            if ref_dt.tzinfo is None: # Should not happen if add_task is correct
+                            if (
+                                ref_dt.tzinfo is None
+                            ):  # Should not happen if add_task is correct
                                 ref_dt = self.timezone.localize(ref_dt)
-                            
+
                             # It's better to advance from the *scheduled* `next_run_datetime` rather than `now`
                             # to avoid drift if the poller is slightly delayed.
                             # Convert the stored `next_run` (UTC timestamp) back to a datetime object with our timezone.
-                            last_scheduled_run_dt = datetime.datetime.fromtimestamp(task_info["next_run"], self.timezone)
+                            last_scheduled_run_dt = datetime.datetime.fromtimestamp(
+                                task_info["next_run"], self.timezone
+                            )
 
                             # Ensure croniter uses the correct timezone context by providing an aware datetime object
-                            cron = croniter(task_info["cron_expression"], last_scheduled_run_dt)
+                            cron = croniter(
+                                task_info["cron_expression"], last_scheduled_run_dt
+                            )
                             next_run_datetime_aware = cron.get_next(datetime.datetime)
-                            task_info["next_run"] = next_run_datetime_aware.timestamp() # Store as UTC timestamp
-                            task_info["cron_ref_dt"] = next_run_datetime_aware # Update reference dt
+                            task_info["next_run"] = (
+                                next_run_datetime_aware.timestamp()
+                            )  # Store as UTC timestamp
+                            task_info["cron_ref_dt"] = (
+                                next_run_datetime_aware  # Update reference dt
+                            )
 
                             if self.debug_mode:
-                                next_run_str_local = next_run_datetime_aware.astimezone(self.timezone).strftime(
-                                    "%Y-%m-%d %H:%M:%S %Z%z"
-                                )
+                                next_run_str_local = next_run_datetime_aware.astimezone(
+                                    self.timezone
+                                ).strftime("%Y-%m-%d %H:%M:%S %Z%z")
                                 logger.debug(
                                     f"SCHED ASYNC_POLLER: Task {task_id} rescheduled. Next run: {next_run_str_local}"
                                 )
                         except Exception as e:
-                            logger.error(f"SCHED ASYNC_POLLER: Error rescheduling task {task_id}: {e} - Task will be removed.")
+                            logger.error(
+                                f"SCHED ASYNC_POLLER: Error rescheduling task {task_id}: {e} - Task will be removed."
+                            )
                             logger.error(f"Details: {traceback.format_exc()}")
-                            self.tasks.pop(task_id, None) # Remove problematic task
+                            self.tasks.pop(task_id, None)  # Remove problematic task
 
                 await asyncio.sleep(task_check_interval)
         except asyncio.CancelledError:
@@ -686,7 +706,7 @@ class TaskScheduler:
                                 await platform.send_group_msg(
                                     group_id=group_id, message=message_chain
                                 )
-                                logger.info(f"使用aiocqhttp平台发送成功")
+                                logger.info("使用aiocqhttp平台发送成功")
                                 success = True
                             except Exception as e:
                                 logger.error(f"使用aiocqhttp平台发送失败: {e}")
@@ -702,7 +722,7 @@ class TaskScheduler:
                                     await platform.send_group_msg(
                                         group_id=group_id, message=message_chain
                                     )
-                                    logger.info(f"使用qqofficial平台发送成功")
+                                    logger.info("使用qqofficial平台发送成功")
                                     success = True
                                 except Exception as e:
                                     logger.error(f"使用qqofficial平台发送失败: {e}")
