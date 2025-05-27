@@ -66,7 +66,7 @@ class WordCloudGenerator:
         min_word_length: int = DEFAULT_MIN_WORD_LENGTH,
         stop_words_file: Optional[str] = None,
         shape: str = "rectangle",  # 修改默认形状为矩形
-        custom_mask_path: Optional[str] = None, # 添加自定义蒙版路径参数
+        custom_mask_path: Optional[str] = None,  # 添加自定义蒙版路径参数
     ):
         """
         初始化词云生成器
@@ -89,7 +89,7 @@ class WordCloudGenerator:
         self.background_color = background_color
         self.colormap = colormap
         self.shape = shape
-        self.custom_mask_path = custom_mask_path # 保存自定义蒙版路径
+        self.custom_mask_path = custom_mask_path  # 保存自定义蒙版路径
 
         # 获取数据目录，优先使用StarTools确保可用
         data_dir = None
@@ -249,18 +249,18 @@ class WordCloudGenerator:
 
     def _create_diamond_mask(self, width: int, height: int):
         """创建菱形蒙版 (白色背景，黑色形状 - 词云绘制区域)
-           词云库通常期望蒙版中值为0的区域绘制文字，非0区域不绘制。
-           所以我们画黑色菱形在白色背景上，然后转换时黑色变0，白色变255.
+        词云库通常期望蒙版中值为0的区域绘制文字，非0区域不绘制。
+        所以我们画黑色菱形在白色背景上，然后转换时黑色变0，白色变255.
         """
-        img = Image.new('L', (width, height), 255)  # 白色背景 (不绘制区域)
+        img = Image.new("L", (width, height), 255)  # 白色背景 (不绘制区域)
         draw = ImageDraw.Draw(img)
         # 定义菱形的四个顶点
         # (width/2, 0), (width, height/2), (width/2, height), (0, height/2)
         points = [
             (width // 2, 0),
             (width, height // 2),
-            (width // 2, height -1), # height-1 to avoid going out of bounds
-            (0, height // 2)
+            (width // 2, height - 1),  # height-1 to avoid going out of bounds
+            (0, height // 2),
         ]
         draw.polygon(points, fill=0)  # 黑色菱形 (绘制区域)
         mask = np.array(img)
@@ -269,24 +269,23 @@ class WordCloudGenerator:
 
     def _create_triangle_mask(self, width: int, height: int):
         """创建上三角形蒙版 (白色背景，黑色形状 - 词云绘制区域)"""
-        img = Image.new('L', (width, height), 255) # 白色背景
+        img = Image.new("L", (width, height), 255)  # 白色背景
         draw = ImageDraw.Draw(img)
         # 定义上三角形的三个顶点
         # (width/2, 0), (width, height), (0, height)
         points = [
             (width // 2, 0),
-            (width -1, height -1), # width-1, height-1 to avoid going out of bounds
-            (0, height -1)
+            (width - 1, height - 1),  # width-1, height-1 to avoid going out of bounds
+            (0, height - 1),
         ]
-        draw.polygon(points, fill=0) # 黑色三角形
+        draw.polygon(points, fill=0)  # 黑色三角形
         mask = np.array(img)
         logger.info(f"生成上三角形蒙版: 大小={width}x{height}")
         return mask
 
     def _create_cloud_mask(self, width: int, height: int):
-        """创建底部平坦、顶部具有3-4个起伏圆弧的云朵形状蒙版
-        """
-        img = Image.new('L', (width, height), 255)  # 白色背景 (不绘制区域)
+        """创建底部平坦、顶部具有3-4个起伏圆弧的云朵形状蒙版"""
+        img = Image.new("L", (width, height), 255)  # 白色背景 (不绘制区域)
         draw = ImageDraw.Draw(img)
 
         y_bottom_line_factor = 0.7  # 平底从高度的70%处开始
@@ -294,17 +293,27 @@ class WordCloudGenerator:
         # 定义构成顶部起伏的椭圆参数 (cx, cy, rx, ry)
         # cx: 中心点X轴比例, cy: 中心点Y轴比例
         # rx: X轴半径比例, ry: Y轴半径比例
-        
+
         ellipses_params = [
             # 尝试构成3个主要、较宽的顶部凸起，以及一个更小的顶部点缀
             # 主要凸起1 (中间，最高)
-            (0.50, 0.35, 0.25, 0.22), # Y中心0.35, Y半径0.22 -> 顶部在0.13, 底部在0.57
+            (0.50, 0.35, 0.25, 0.22),  # Y中心0.35, Y半径0.22 -> 顶部在0.13, 底部在0.57
             # 主要凸起2 (左侧)
-            (0.25, 0.45, 0.28, 0.20), # Y中心0.45, Y半径0.20 -> 顶部在0.25, 底部在0.65. X左边缘0.25-0.28 = -0.03 (会裁剪到0)
+            (
+                0.25,
+                0.45,
+                0.28,
+                0.20,
+            ),  # Y中心0.45, Y半径0.20 -> 顶部在0.25, 底部在0.65. X左边缘0.25-0.28 = -0.03 (会裁剪到0)
             # 主要凸起3 (右侧)
-            (0.75, 0.45, 0.28, 0.20), # Y中心0.45, Y半径0.20 -> 顶部在0.25, 底部在0.65. X右边缘0.75+0.28 = 1.03 (会裁剪到1)
+            (
+                0.75,
+                0.45,
+                0.28,
+                0.20,
+            ),  # Y中心0.45, Y半径0.20 -> 顶部在0.25, 底部在0.65. X右边缘0.75+0.28 = 1.03 (会裁剪到1)
             # 额外的顶部小凸起，增加起伏感 (可选，如果上面3个效果够好，可以移除或调整)
-            (0.50, 0.20, 0.12, 0.10), # 更小的，在中央凸起之上
+            (0.50, 0.20, 0.12, 0.10),  # 更小的，在中央凸起之上
         ]
 
         min_x_coord = width
@@ -320,10 +329,10 @@ class WordCloudGenerator:
                 center_x - radius_x,
                 center_y - radius_y,
                 center_x + radius_x,
-                center_y + radius_y
+                center_y + radius_y,
             )
-            draw.ellipse(bbox, fill=0) # 值为0的区域是词云绘制区
-            
+            draw.ellipse(bbox, fill=0)  # 值为0的区域是词云绘制区
+
             min_x_coord = min(min_x_coord, center_x - radius_x)
             max_x_coord = max(max_x_coord, center_x + radius_x)
 
@@ -334,24 +343,26 @@ class WordCloudGenerator:
         # 绘制平坦的底部矩形
         if min_x_coord < max_x_coord:  # 只有当云朵有宽度时才画底部
             flat_bottom_y_start = int(height * y_bottom_line_factor)
-            
+
             fill_rect_bbox = (
                 min_x_coord,
                 flat_bottom_y_start,
                 max_x_coord,
-                height - 1  # 延伸到图像底部
+                height - 1,  # 延伸到图像底部
             )
             draw.rectangle(fill_rect_bbox, fill=0)
 
         mask = np.array(img)
-        logger.info(f"通过程序化绘制生成顶部起伏、底部平坦的云朵蒙版: 大小={width}x{height}")
+        logger.info(
+            f"通过程序化绘制生成顶部起伏、底部平坦的云朵蒙版: 大小={width}x{height}"
+        )
         return mask
 
     def _init_wordcloud(self) -> None:
         """初始化词云生成器"""
         # 如果形状设置为圆形，创建圆形蒙版
         mask = None
-        processed_custom_mask = False # 标记是否成功处理了自定义蒙版
+        processed_custom_mask = False  # 标记是否成功处理了自定义蒙版
 
         # 优先处理自定义蒙版
         if self.custom_mask_path:
@@ -361,12 +372,23 @@ class WordCloudGenerator:
                 mask_image_path = Path(self.custom_mask_path)
             else:
                 # 相对路径，相对于插件数据目录下的 resources/images/
-                if self._temp_data_dir: # _temp_data_dir 在 __init__ 中设置
-                    mask_image_path = self._temp_data_dir / "resources" / "images" / self.custom_mask_path
-                else: # Fallback if _temp_data_dir is somehow not set
-                    mask_image_path = PLUGIN_DIR / "resources" / "images" / self.custom_mask_path
-            
-            if mask_image_path and mask_image_path.exists() and mask_image_path.is_file():
+                if self._temp_data_dir:  # _temp_data_dir 在 __init__ 中设置
+                    mask_image_path = (
+                        self._temp_data_dir
+                        / "resources"
+                        / "images"
+                        / self.custom_mask_path
+                    )
+                else:  # Fallback if _temp_data_dir is somehow not set
+                    mask_image_path = (
+                        PLUGIN_DIR / "resources" / "images" / self.custom_mask_path
+                    )
+
+            if (
+                mask_image_path
+                and mask_image_path.exists()
+                and mask_image_path.is_file()
+            ):
                 try:
                     logger.info(f"加载自定义蒙版图片: {mask_image_path}")
                     custom_mask_image = Image.open(mask_image_path)
@@ -379,9 +401,11 @@ class WordCloudGenerator:
                         # 如果是RGBA，第四个通道是alpha，也可以用。这里我们简单转灰度
                         # Image.open().convert('L') 之后再 np.array() 是更标准做法
                         # 为了安全，重新用 convert('L') 加载
-                        custom_mask_image_gray = Image.open(mask_image_path).convert('L')
+                        custom_mask_image_gray = Image.open(mask_image_path).convert(
+                            "L"
+                        )
                         mask = np.array(custom_mask_image_gray)
-                        logger.info(f"自定义蒙版已转换为灰度图.")
+                        logger.info("自定义蒙版已转换为灰度图.")
 
                     # 检查蒙版的值范围，wordcloud期望非绘制区域为255
                     # 如果蒙版主要是深色背景，浅色图案，可能需要反转
@@ -389,13 +413,19 @@ class WordCloudGenerator:
                     # 这里我们假设用户提供的图片是白底黑图案 (黑色区域为词云形状)
                     # wordcloud库会将蒙版中值为0或接近0的区域视为绘制区域，255为忽略区域
                     # 所以，如果我们的图片是黑形状白背景，Pillow读入后黑是0，白是255，正好符合预期
-                    logger.info(f"自定义蒙版加载成功，形状: {mask.shape}, 类型: {mask.dtype}")
+                    logger.info(
+                        f"自定义蒙版加载成功，形状: {mask.shape}, 类型: {mask.dtype}"
+                    )
                     processed_custom_mask = True
                 except Exception as e:
-                    logger.error(f"加载或处理自定义蒙版图片失败: {mask_image_path}, 错误: {e}")
-                    mask = None # 加载失败，不使用蒙版
+                    logger.error(
+                        f"加载或处理自定义蒙版图片失败: {mask_image_path}, 错误: {e}"
+                    )
+                    mask = None  # 加载失败，不使用蒙版
             else:
-                logger.warning(f"自定义蒙版图片路径无效或文件不存在: {self.custom_mask_path} (解析后路径: {mask_image_path})")
+                logger.warning(
+                    f"自定义蒙版图片路径无效或文件不存在: {self.custom_mask_path} (解析后路径: {mask_image_path})"
+                )
 
         # 如果没有成功处理自定义蒙版，再根据 shape 参数创建预设蒙版
         if not processed_custom_mask:
