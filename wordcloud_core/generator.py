@@ -67,6 +67,8 @@ class WordCloudGenerator:
         stop_words_file: Optional[str] = None,
         shape: str = "rectangle",  # 修改默认形状为矩形
         custom_mask_path: Optional[str] = None,  # 添加自定义蒙版路径参数
+        min_font_size: int = 8,  # 添加最小字体大小参数
+        max_font_size: int = 200,  # 添加最大字体大小参数
     ):
         """
         初始化词云生成器
@@ -82,6 +84,8 @@ class WordCloudGenerator:
             stop_words_file: 停用词文件路径
             shape: 词云形状，支持"circle"和"rectangle"
             custom_mask_path: 自定义蒙版图片路径
+            min_font_size: 最小字体大小，用于低频词
+            max_font_size: 最大字体大小，用于高频词
         """
         self.width = width
         self.height = height
@@ -90,6 +94,8 @@ class WordCloudGenerator:
         self.colormap = colormap
         self.shape = shape
         self.custom_mask_path = custom_mask_path  # 保存自定义蒙版路径
+        self.min_font_size = min_font_size  # 保存最小字体大小
+        self.max_font_size = max_font_size  # 保存最大字体大小
 
         # 获取数据目录，优先使用StarTools确保可用
         data_dir = None
@@ -437,17 +443,15 @@ class WordCloudGenerator:
                 mask = self._create_triangle_mask(self.width, self.height)
             elif self.shape == "cloud":
                 mask = self._create_cloud_mask(self.width, self.height)
-            # 对于 "rectangle" 或其他未指定蒙版的形状，mask 保持为 None，词云将默认为矩形
-
-        # 词云参数
+            # 对于 "rectangle" 或其他未指定蒙版的形状，mask 保持为 None，词云将默认为矩形        # 词云参数
         wordcloud_params = {
             "width": self.width,
             "height": self.height,
             "max_words": self.max_words,
             "background_color": self.background_color,
             "colormap": self.colormap,
-            "min_font_size": 10,
-            "max_font_size": 120,
+            "min_font_size": self.min_font_size,
+            "max_font_size": self.max_font_size,
             "random_state": 42,
             "collocations": False,  # 避免重复显示词组
             "normalize_plurals": False,

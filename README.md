@@ -1,11 +1,11 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.4-blueviolet?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.3.5-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
-  <img src="https://img.shields.io/badge/updated-2025--05--27-brightgreen?style=flat-square" alt="Last Updated">
+  <img src="https://img.shields.io/badge/updated-2025--05--28-brightgreen?style=flat-square" alt="Last Updated">
 </div>
 
 ## 📝 介绍
@@ -125,6 +125,20 @@ CloudRank 插件是一款用于 AstrBot 的插件，能够将群聊或私聊中�
     <td>参与词频统计的最小词语长度</td>
     <td><code>2</code></td>
     <td>小于此长度的词语（通常是单个字或无意义的短词）将被忽略</td>
+  </tr>
+  <tr>
+    <td><code>min_font_size</code></td>
+    <td><code>int</code></td>
+    <td>词云中最小字体大小</td>
+    <td><code>8</code></td>
+    <td>控制低频词汇的最小显示字体大小，与max_font_size配合调整词云的字体大小对比度</td>
+  </tr>
+  <tr>
+    <td><code>max_font_size</code></td>
+    <td><code>int</code></td>
+    <td>词云中最大字体大小</td>
+    <td><code>170</code></td>
+    <td>控制高频词汇的最大显示字体大小，与min_font_size配合调整词云的字体大小对比度，使高频词更加突出</td>
   </tr>
   <tr>
     <td><code>background_color</code></td>
@@ -400,6 +414,20 @@ AstrBot/data/plugin_data/cloudrank/
   - **解决**: 确保消息格式完全匹配 `constant.py` 中定义的关键词，包括空格和标点符号。确保消息不以 `/` 开头，否则会被视为命令而非普通消息。
 
 ## 🔄 更新日志
+
+#### v1.3.5（2025-05-27）
+
+**新功能：**
+
+- 新增 `min_font_size` 和 `max_font_size` 配置项，允许自定义词云字体大小范围
+- 改进字体大小对比度，从默认的 10-120 调整为 8-170，使高频词汇更加突出
+- 增强词云视觉效果，提供更好的高低频词汇对比显示
+
+**配置更新：**
+
+- `min_font_size`: 控制低频词汇的最小字体大小（默认值：8）
+- `max_font_size`: 控制高频词汇的最大字体大小（默认值：170）
+- 这些配置项允许用户根据需要调整词云的视觉对比度
 
 #### v1.3.4（2025-05-27）
 

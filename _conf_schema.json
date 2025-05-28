@@ -103,6 +103,18 @@
         "hint": "提供一个图片文件的路径作为词云的形状蒙版。图片中白色区域将被忽略，非白色区域将用于绘制词语。如果设置了此路径，则预设的'形状'选项将无效。支持相对路径（相对于插件数据目录下的resources/images/子目录）或绝对路径。",
         "default": ""
     },
+    "min_font_size": {
+        "type": "int",
+        "description": "词云最小字体大小",
+        "hint": "低频词语的最小字体大小，建议设置为8-15之间",
+        "default": 8
+    },
+    "max_font_size": {
+        "type": "int",
+        "description": "词云最大字体大小",
+        "hint": "高频词语的最大字体大小，建议设置为150-300之间",
+        "default": 170
+    },
     "show_user_ranking": {
         "type": "bool",
         "description": "是否在每日词云中显示用户活跃度排行",
