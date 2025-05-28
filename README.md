@@ -1,7 +1,7 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.5-blueviolet?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.3.6-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
@@ -414,6 +414,26 @@ AstrBot/data/plugin_data/cloudrank/
   - **解决**: 确保消息格式完全匹配 `constant.py` 中定义的关键词，包括空格和标点符号。确保消息不以 `/` 开头，否则会被视为命令而非普通消息。
 
 ## 🔄 更新日志
+
+#### v1.3.6（2025-05-28）
+
+**停用词系统重大更新：**
+
+- 大幅增强停用词过滤系统，从原有的 4 个示例停用词扩展到 700+个综合停用词
+- 新增中文常用停用词：的、了、在、和、是等基础词汇
+- 新增中文语气词和感叹词：阿、啊、哈哈、呵呵等表情化词汇
+- 新增中文代词和指示词：俺们、这个、那个、某些等指代词汇
+- 新增中文连词和介词：按照、从而、对于、关于等连接词汇
+- 新增英文常用停用词：a、the、and、but 等英文基础词汇
+- 新增网络用语和表情符号文字：emmm、哈哈哈、呵呵等网络表达
+- 新增常见无意义词汇：东西、事情、情况、方面等模糊词汇
+- 新增标点符号和特殊字符过滤支持
+
+**改进效果：**
+
+- 显著提升词云质量，过滤掉无意义的高频词汇
+- 让关键词汇更加突出，提高词云的可读性和价值
+- 支持中英文混合文本的高质量词云生成
 
 #### v1.3.5（2025-05-28）
 
