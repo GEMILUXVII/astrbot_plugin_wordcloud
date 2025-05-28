@@ -44,7 +44,7 @@ from . import constant as constant_module
     "CloudRank",
     "GEMILUXVII",
     "词云与排名插件 (CloudRank) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。",
-    "1.3.4",
+    "1.3.5",
     "https://github.com/GEMILUXVII/astrbot_plugin_cloudrank",
 )
 class WordCloudPlugin(Star):
@@ -302,9 +302,7 @@ class WordCloudPlugin(Star):
         """初始化词云生成器"""
         # 确保DATA_DIR已初始化
         if constant_module.DATA_DIR is None:
-            raise RuntimeError("DATA_DIR未初始化，无法创建词云生成器")
-
-        # 获取配置参数
+            raise RuntimeError("DATA_DIR未初始化，无法创建词云生成器")        # 获取配置参数
         max_words = self.config.get("max_word_count", 100)
         min_word_length = self.config.get("min_word_length", 2)
         background_color = self.config.get("background_color", "white")
@@ -313,6 +311,10 @@ class WordCloudPlugin(Star):
         custom_mask_path_config = self.config.get(
             "custom_mask_path", ""
         )  # 读取自定义蒙版路径配置
+        
+        # 获取字体大小配置
+        min_font_size = self.config.get("min_font_size", 8)
+        max_font_size = self.config.get("max_font_size", 200)
 
         # 获取字体路径，如果配置中没有，则使用默认值
         font_path = self.config.get("font_path", "")
@@ -357,9 +359,7 @@ class WordCloudPlugin(Star):
                 plugin_stopwords_path = constant_module.PLUGIN_DIR / stop_words_file
                 if os.path.exists(plugin_stopwords_path):
                     stop_words_file = str(plugin_stopwords_path)
-                    logger.info(f"使用插件目录中的停用词文件: {stop_words_file}")
-
-        # 初始化词云生成器
+                    logger.info(f"使用插件目录中的停用词文件: {stop_words_file}")        # 初始化词云生成器
         self.wordcloud_generator = WordCloudGenerator(
             max_words=max_words,
             min_word_length=min_word_length,
@@ -371,6 +371,8 @@ class WordCloudPlugin(Star):
             else None,
             shape=shape,
             custom_mask_path=custom_mask_path_config,  # 传递自定义蒙版路径
+            min_font_size=min_font_size,  # 传递最小字体大小
+            max_font_size=max_font_size,  # 传递最大字体大小
         )
 
         logger.info("词云生成器初始化完成")
