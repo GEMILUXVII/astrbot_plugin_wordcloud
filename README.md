@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/updated-2025--05--29-brightgreen?style=flat-square" alt="Last Updated">
 </div>
 
-## 👥 贡献者
+## 👥 插件贡献者
 
 <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=GEMILUXVII/astrbot_plugin_cloudrank" />
