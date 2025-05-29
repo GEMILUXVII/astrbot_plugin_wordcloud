@@ -1,12 +1,27 @@
-# <div align="center">📊 CloudRank </div>
+# <div align="center">☁️ CloudRank</div>
+
+<div align="center"><em>智能词云分析 · 聊天热度排行</em></div>
+
+<br>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.6-blueviolet?style=flat-square" alt="Version">
-  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
-  <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
-  <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
-  <img src="https://img.shields.io/badge/updated-2025--05--28-brightgreen?style=flat-square" alt="Last Updated">
+  <a href="#-更新日志"><img src="https://img.shields.io/badge/version-v1.3.7-blueviolet?style=for-the-badge" alt="Version"></a>
+  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=for-the-badge" alt="License"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white" alt="Python Version"></a>
+  <a href="https://github.com/AstrBotDevs/AstrBot"><img src="https://img.shields.io/badge/AstrBot-Compatible-00d4aa?style=for-the-badge&logo=robot&logoColor=white" alt="AstrBot Compatible"></a>
 </div>
+
+<div align="center">
+  <a href="https://github.com/botuniverse/onebot-11"><img src="https://img.shields.io/badge/OneBotv11-AIOCQHTTP-1e90ff?style=for-the-badge&logo=qq&logoColor=white" alt="OneBot v11 Support"></a>
+  <a href="https://github.com/WeChatPadPro/WeChatPadPro"><img src="https://img.shields.io/badge/WeChat-PadPro-07c160?style=for-the-badge&logo=wechat&logoColor=white" alt="WeChatPadPro Support"></a>
+  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/commits/main"><img src="https://img.shields.io/badge/updated-2025--05--29-brightgreen?style=for-the-badge&logo=calendar&logoColor=white" alt="Last Updated"></a>
+</div>
+
+## 👥 插件贡献者
+
+<a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=GEMILUXVII/astrbot_plugin_cloudrank" />
+</a>
 
 ## 📝 介绍
 
@@ -34,6 +49,13 @@ CloudRank 插件是一款用于 AstrBot 的插件，能够将群聊或私聊中�
 - 📜 **消息历史记录**：插件会自动记录消息用于分析，用户无需额外操作。
 - 🚀 **易于使用**：提供简洁的命令进行交互。
 - 🐛 **调试模式**：可选的详细日志输出，方便排查问题。
+
+## 📱 支持平台
+
+CloudRank 插件基于 AstrBot 平台开发：
+
+- **QQ**：支持 QQ 群聊的词云生成
+- **微信**：支持基于 WeChatPadPro 微信群聊的词云生成(目前存在一定 bug)
 
 ## 🚀 安装方法
 
@@ -415,9 +437,19 @@ AstrBot/data/plugin_data/cloudrank/
 
 ## 🔄 更新日志
 
+#### v1.3.7（2025-05-29）
+
+**平台支持扩展：**
+
+- 新增 WeChatPadPro 平台词云生成支持
+
+**贡献者：**
+
+- 感谢 [@xu-wish](https://github.com/xu-wish) 通过 [PR #9](https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/pull/9) 贡献 WeChatPadPro 平台支持
+
 #### v1.3.6（2025-05-28）
 
-**停用词系统重大更新：**
+**停用词系统更新：**
 
 - 大幅增强停用词过滤系统，从原有的 4 个示例停用词扩展到 700+个综合停用词
 - 新增中文常用停用词：的、了、在、和、是等基础词汇
