@@ -8,34 +8,11 @@
   <img src="https://img.shields.io/badge/updated-2025--05--29-brightgreen?style=flat-square" alt="Last Updated">
 </div>
 
-## 👥 项目贡献者
+## 👥 贡献者
 
-<div align="center">
-  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=GEMILUXVII/astrbot_plugin_cloudrank" alt="Contributors" />
-  </a>
-</div>
-
-<div align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <a href="https://github.com/GEMILUXVII">
-          <img src="https://github.com/GEMILUXVII.png" width="64px" height="64px" style="border-radius: 50%;" alt="GEMILUXVII"/>
-          <br />
-          <sub><b>GEMILUXVII</b></sub>
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://github.com/xu-wish">
-          <img src="https://github.com/xu-wish.png" width="64px" height="64px" style="border-radius: 50%;" alt="xu-wish"/>
-          <br />
-          <sub><b>xu-wish</b></sub>
-        </a>
-      </td>
-    </tr>
-  </table>
-</div>
+<a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=GEMILUXVII/astrbot_plugin_cloudrank" />
+</a>
 
 ## 📝 介绍
 
