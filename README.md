@@ -5,7 +5,7 @@
 <br>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.7-blueviolet?style=for-the-badge" alt="Version">
+  <a href="#-更新日志"><img src="https://img.shields.io/badge/version-v1.3.7-blueviolet?style=for-the-badge" alt="Version"></a>
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-00d4aa?style=for-the-badge&logo=robot&logoColor=white" alt="AstrBot Compatible">
