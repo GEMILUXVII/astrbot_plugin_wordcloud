@@ -8,8 +8,15 @@ body:
   - type: markdown
     attributes:
       value: |
-        请尽可能详细地描述问题，以便能更快地定位并修复它
-        在提交前，请详细阅读Readme文档是否有当前错误的说明，并请检查是否已有类似的 issue
+        请尽可能详细地描述问题，以便能更快地定位并修复它。
+
+  - type: checkboxes
+    attributes:
+      label: 提交前确认
+      description: 在提交此错误报告前，请确认以下内容：
+      options:
+        - label: 我已仔细阅读过项目的 README.md 文档，确认其中没有关于此错误的说明或解决方案，并且我也已检查过现有的 Issues，未发现重复报告。
+          required: true
 
   - type: textarea
     id: bug-description
