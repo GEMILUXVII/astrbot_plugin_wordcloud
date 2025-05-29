@@ -1,0 +1,134 @@
+name: 错误报告 (Bug Report)
+description: 提交 CloudRank 插件的错误
+title: "[BUG] <请在此处填写你遇到的问题>"
+labels: ["bug"]
+assignees:
+  - GEMILUXVII
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请尽可能详细地描述问题，以便能更快地定位并修复它
+        在提交前，请详细阅读Readme文档是否有当前错误的说明，并请检查是否已有类似的 issue
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 错误描述 (Bug Description)
+      description: 请清晰简洁地描述遇到的错误
+      placeholder: 例如：“当我尝试使用 /wordcloud 命令时，插件崩溃了，并且机器人没有发送任何词云图片”
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: 复现步骤 (Steps to Reproduce)
+      description: 请详细说明如何复现这个错误
+      placeholder: |
+        1. 在群聊 X 中发送消息...
+        2. 输入命令 `/wordcloud 3`...
+        3. 观察到机器人没有任何回复/机器人回复了错误信息...
+        4. （其他相关步骤）
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 期望行为 (Expected Behavior)
+      description: 请描述在上述步骤之后，期望发生什么
+      placeholder: 例如：“机器人应该发送一张包含最近3天聊天内容的词云图片”
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: 实际行为 (Actual Behavior)
+      description: 请描述实际发生了什么
+      placeholder: 例如：“机器人没有任何回复，控制台输出了 XXX 错误”
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots-logs
+    attributes:
+      label: 截图/日志 (Screenshots/Logs)
+      description: |
+        如果适用，请在此处添加截图或日志以帮助解释问题
+        对于日志，请开启插件的 `debug_mode` (如果问题与运行时错误相关) 并复制相关的日志片段
+        **重要提示：** 请确保在上传截图或日志前，已移除或遮盖所有个人身份信息 (PII) 或其他敏感数据！
+      placeholder: |
+        （在此处粘贴截图或日志）
+        ```log
+        [时间戳] [级别] 详细的错误日志...
+        ```
+    validations:
+      required: false
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: 插件版本 (CloudRank Version)
+      description: 正在使用的 CloudRank 插件版本是多少？ (例如 v1.3.6)
+      placeholder: "例如：v1.3.6"
+    validations:
+      required: true
+
+  - type: input
+    id: astrbot-version
+    attributes:
+      label: AstrBot 版本 (AstrBot Version)
+      description: 正在使用的 AstrBot 版本是多少？
+      placeholder: "例如：v3.6.8"
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python 版本 (Python Version)
+      description: 使用的 Python 版本是多少？
+      placeholder: "例如：3.11.11"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统 (Operating System)
+      description: 在哪个操作系统上运行 AstrBot 和插件？
+      options:
+        - Windows
+        - Linux (请在下方“其他信息”中注明发行版)
+        - macOS
+        - Docker (请在下方“其他信息”中注明基础镜像)
+        - 其他 (请在下方“其他信息”中注明)
+    validations:
+      required: true
+
+  - type: textarea
+    id: relevant-config
+    attributes:
+      label: 相关配置 (Relevant Configuration)
+      description: |
+        请列出可能与此错误相关的 CloudRank 插件配置项及其值
+        例如：`font_path`, `custom_mask_path`, `enabled_group_list`, `auto_generate_cron` 等
+        **请不要泄露敏感信息，如 API 密钥或密码**
+      placeholder: |
+        enabled_group_list: "123456789"
+        font_path: "my_custom_font.ttf"
+        custom_mask_path: "mask.png"
+        # 其他可能相关的配置...
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 其他信息 (Additional Context)
+      description: 在此处添加有关该问题的任何其他上下文或备注例如，问题是间歇性出现还是稳定复现？是否尝试过其他排查步骤？
+      placeholder: "例如：这个问题只在特定群聊中出现我尝试重启了 AstrBot 但问题依旧"
+    validations:
+      required: false
