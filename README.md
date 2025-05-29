@@ -1,4 +1,6 @@
-# <div align="center">📊 CloudRank </div>
+# <div align="center">☁️ CloudRank</div>
+
+<div align="center"><em>智能词云分析 · 聊天热度排行</em></div>
 
 <div align="center">
   <img src="https://img.shields.io/badge/version-v1.3.7-blueviolet?style=for-the-badge" alt="Version">
