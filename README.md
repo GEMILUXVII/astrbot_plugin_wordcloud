@@ -1,11 +1,16 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.7-blueviolet?style=flat-square" alt="Version">
-  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
-  <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
-  <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
-  <img src="https://img.shields.io/badge/updated-2025--05--29-brightgreen?style=flat-square" alt="Last Updated">
+  <img src="https://img.shields.io/badge/version-v1.3.7-blueviolet?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=for-the-badge" alt="License">
+  <img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white" alt="Python Version">
+  <img src="https://img.shields.io/badge/AstrBot-Compatible-00d4aa?style=for-the-badge&logo=robot&logoColor=white" alt="AstrBot Compatible">
+</div>
+
+<div align="center">
+  <img src="https://img.shields.io/badge/OneBotv11-AIOCQHTTP-1e90ff?style=for-the-badge&logo=qq&logoColor=white" alt="OneBot v11 Support">
+  <img src="https://img.shields.io/badge/WeChat-PadPro-07c160?style=for-the-badge&logo=wechat&logoColor=white" alt="WeChatPadPro Support">
+  <img src="https://img.shields.io/badge/updated-2025--05--29-brightgreen?style=for-the-badge&logo=calendar&logoColor=white" alt="Last Updated">
 </div>
 
 ## 👥 插件贡献者
