@@ -398,6 +398,7 @@ def extract_group_id_from_session(session_id: str) -> Optional[str]:
                    - "qqofficial:group:123456789"
                    - "aiocqhttp_group_123456789"
                    - "123456789"（纯群号）
+                   - "wechatpadpro_group_123456789@chatroom"
                    - 其他可能的格式
 
     Returns:
@@ -407,6 +408,12 @@ def extract_group_id_from_session(session_id: str) -> Optional[str]:
         if not session_id:
             logger.warning("会话ID为空，无法提取群号")
             return None
+
+        # 特别处理带 "@chatroom" 的格式（如 wechatpadpro_group_123456789@chatroom）
+        import re
+        match = re.match(r".+?_group_(\d+@chatroom)", session_id)
+        if match:
+            return match.group(1)
 
         # 处理会话ID为纯数字的情况
         if isinstance(session_id, str) and session_id.isdigit():

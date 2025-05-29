@@ -173,7 +173,11 @@ class WordCloudPlugin(Star):
             platform_name = parts[0]
             group_id_val = parts[1]
             if platform_name and group_id_val:
-                return f"{platform_name}:GroupMessage:0_{group_id_val}"
+                # 对微信平台不加0_
+                if platform_name.startswith("wechat"):
+                    return f"{platform_name}:GroupMessage:{group_id_val}"
+                else:
+                    return f"{platform_name}:GroupMessage:0_{group_id_val}"
 
         logger.warning(
             f"无法将内部 session ID '{internal_db_session_id}' 转换为 AstrBot 发送格式。将按原样使用。"
