@@ -6,7 +6,7 @@
 
 <div align="center">
   <a href="#-更新日志"><img src="https://img.shields.io/badge/version-v1.3.7-blueviolet?style=for-the-badge" alt="Version"></a>
-  <a href="#-许可证"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=for-the-badge" alt="License"></a>
+  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=for-the-badge" alt="License"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white" alt="Python Version"></a>
   <a href="https://github.com/AstrBotDevs/AstrBot"><img src="https://img.shields.io/badge/AstrBot-Compatible-00d4aa?style=for-the-badge&logo=robot&logoColor=white" alt="AstrBot Compatible"></a>
 </div>
