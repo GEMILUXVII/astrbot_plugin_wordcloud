@@ -59,6 +59,12 @@
         "hint": "小于此长度的词会被忽略，建议为2",
         "default": 2
     },
+    "min_word_frequency": {
+        "type": "int",
+        "description": "最小词频",
+        "hint": "出现次数低于此值的词将被过滤，以优化词云视觉效果，设为1则不过滤",
+        "default": 2
+    },
     "background_color": {
         "type": "string",
         "description": "词云背景颜色",
@@ -140,4 +146,4 @@
         "default": false,
         "obvious_hint": false
     }
-} 
+}
