@@ -14,7 +14,7 @@
 <div align="center">
   <a href="https://github.com/botuniverse/onebot-11"><img src="https://img.shields.io/badge/OneBotv11-AIOCQHTTP-1e90ff?style=for-the-badge&logo=qq&logoColor=white" alt="OneBot v11 Support"></a>
   <a href="https://github.com/WeChatPadPro/WeChatPadPro"><img src="https://img.shields.io/badge/WeChat-PadPro-07c160?style=for-the-badge&logo=wechat&logoColor=white" alt="WeChatPadPro Support"></a>
-  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/commits/main"><img src="https://img.shields.io/badge/updated-2025--05--29-brightgreen?style=for-the-badge&logo=calendar&logoColor=white" alt="Last Updated"></a>
+  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/commits/main"><img src="https://img.shields.io/badge/updated-2025--05--30-brightgreen?style=for-the-badge&logo=calendar&logoColor=white" alt="Last Updated"></a>
 </div>
 
 ## 👥 插件贡献者
