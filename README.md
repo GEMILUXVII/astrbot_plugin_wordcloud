@@ -1,11 +1,40 @@
 # <div align="center">📊 CloudRank </div>
 
 <div align="center">
-  <img src="https://img.shields.io/badge/version-v1.3.6-blueviolet?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/version-v1.3.7-blueviolet?style=flat-square" alt="Version">
   <img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python Version">
   <img src="https://img.shields.io/badge/AstrBot-Compatible-green?style=flat-square" alt="AstrBot Compatible">
-  <img src="https://img.shields.io/badge/updated-2025--05--28-brightgreen?style=flat-square" alt="Last Updated">
+  <img src="https://img.shields.io/badge/updated-2025--05--29-brightgreen?style=flat-square" alt="Last Updated">
+</div>
+
+## 👥 项目贡献者
+
+<div align="center">
+  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=GEMILUXVII/astrbot_plugin_cloudrank" alt="Contributors" />
+  </a>
+</div>
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <a href="https://github.com/GEMILUXVII">
+          <img src="https://github.com/GEMILUXVII.png" width="64px" height="64px" style="border-radius: 50%;" alt="GEMILUXVII"/>
+          <br />
+          <sub><b>GEMILUXVII</b></sub>
+        </a>
+      </td>
+      <td align="center">
+        <a href="https://github.com/xu-wish">
+          <img src="https://github.com/xu-wish.png" width="64px" height="64px" style="border-radius: 50%;" alt="xu-wish"/>
+          <br />
+          <sub><b>xu-wish</b></sub>
+        </a>
+      </td>
+    </tr>
+  </table>
 </div>
 
 ## 📝 介绍
@@ -34,6 +63,13 @@ CloudRank 插件是一款用于 AstrBot 的插件，能够将群聊或私聊中�
 - 📜 **消息历史记录**：插件会自动记录消息用于分析，用户无需额外操作。
 - 🚀 **易于使用**：提供简洁的命令进行交互。
 - 🐛 **调试模式**：可选的详细日志输出，方便排查问题。
+
+## 📱 支持平台
+
+CloudRank 插件基于 AstrBot 平台开发：
+
+- **QQ**：支持 QQ 群聊和私聊的词云生成
+- **微信**：支持基于 WeChatPadPro 微信群聊和私聊的词云生成
 
 ## 🚀 安装方法
 
@@ -415,9 +451,19 @@ AstrBot/data/plugin_data/cloudrank/
 
 ## 🔄 更新日志
 
+#### v1.3.7（2025-05-29）
+
+**平台支持扩展：**
+
+- 新增 WeChatPadPro 平台词云生成支持
+
+**贡献者：**
+
+- 感谢 [@xu-wish](https://github.com/xu-wish) 通过 [PR #9](https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/pull/9) 贡献 WeChatPadPro 平台支持
+
 #### v1.3.6（2025-05-28）
 
-**停用词系统重大更新：**
+**停用词系统更新：**
 
 - 大幅增强停用词过滤系统，从原有的 4 个示例停用词扩展到 700+个综合停用词
 - 新增中文常用停用词：的、了、在、和、是等基础词汇
