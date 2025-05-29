@@ -44,7 +44,7 @@ from . import constant as constant_module
     "CloudRank",
     "GEMILUXVII",
     "词云与排名插件 (CloudRank) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。",
-    "1.3.7",
+    "1.3.8",
     "https://github.com/GEMILUXVII/astrbot_plugin_cloudrank",
 )
 class WordCloudPlugin(Star):
@@ -309,6 +309,7 @@ class WordCloudPlugin(Star):
             raise RuntimeError("DATA_DIR未初始化，无法创建词云生成器")        # 获取配置参数
         max_words = self.config.get("max_word_count", 100)
         min_word_length = self.config.get("min_word_length", 2)
+        min_word_frequency = self.config.get("min_word_frequency", 2)  # 新增：读取最小词频配置
         background_color = self.config.get("background_color", "white")
         colormap = self.config.get("colormap", "viridis")
         shape = self.config.get("shape", "rectangle")  # 默认形状为矩形
@@ -367,6 +368,7 @@ class WordCloudPlugin(Star):
         self.wordcloud_generator = WordCloudGenerator(
             max_words=max_words,
             min_word_length=min_word_length,
+            min_word_frequency=min_word_frequency,  # 新增：传递最小词频参数
             background_color=background_color,
             colormap=colormap,
             font_path=font_path,

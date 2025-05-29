@@ -69,6 +69,7 @@ class WordCloudGenerator:
         custom_mask_path: Optional[str] = None,  # 添加自定义蒙版路径参数
         min_font_size: int = 8,  # 添加最小字体大小参数
         max_font_size: int = 200,  # 添加最大字体大小参数
+        min_word_frequency: int = 1,  # 新增：最小词频参数
     ):
         """
         初始化词云生成器
@@ -96,6 +97,7 @@ class WordCloudGenerator:
         self.custom_mask_path = custom_mask_path  # 保存自定义蒙版路径
         self.min_font_size = min_font_size  # 保存最小字体大小
         self.max_font_size = max_font_size  # 保存最大字体大小
+        self.min_word_frequency = min_word_frequency # 新增：保存最小词频
 
         # 获取数据目录，优先使用StarTools确保可用
         data_dir = None
@@ -456,9 +458,11 @@ class WordCloudGenerator:
             "collocations": False,  # 避免重复显示词组
             "normalize_plurals": False,
             "mask": mask,  # 设置蒙版
-            "prefer_horizontal": 0.9,  # 允许10%的词垂直显示
+            "prefer_horizontal": 0.9,  # 调整为90%水平显示，增加布局多样性
             "repeat": False,  # 不重复使用词以填满空间，避免文字出现在不应该出现的地方
             "mode": "RGB",  # 使用RGB模式，避免与轮廓绘制时的通道不匹配问题
+            "relative_scaling": 0.8,  # 调整词汇大小的相对缩放，让大小差异更合理
+            "max_font_size": min(self.max_font_size, 120),  # 限制最大字体，避免过大
         }
 
         # 添加轮廓效果，增强形状
@@ -505,6 +509,27 @@ class WordCloudGenerator:
         # 统计词频
         word_counts = Counter(all_words)
         return dict(word_counts)
+
+    def _filter_by_frequency(self, word_counts: Dict[str, int]) -> Dict[str, int]:
+        """
+        根据最小词频过滤词汇。
+
+        Args:
+            word_counts: 原始词频统计。
+
+        Returns:
+            过滤后的词频统计。
+        """
+        if self.min_word_frequency <= 1:
+            return word_counts  # 如果最小词频设置为1或更小，则不进行过滤
+
+        filtered_counts = {
+            word: count
+            for word, count in word_counts.items()
+            if count >= self.min_word_frequency
+        }
+        logger.info(f"词频过滤 (min_freq={self.min_word_frequency}): 原始词汇 {len(word_counts)}个 -> 过滤后 {len(filtered_counts)}个")
+        return filtered_counts
 
     def _add_timestamp_to_image(
         self, img: Image.Image, timestamp: Optional[int] = None
@@ -665,6 +690,15 @@ class WordCloudGenerator:
         if not word_counts:
             raise ValueError("无有效词频数据，无法生成词云")
 
+        # 在生成词云前，根据配置的最小词频过滤词汇
+        filtered_word_counts = self._filter_by_frequency(word_counts)
+
+        if not filtered_word_counts:
+            # 如果过滤后没有词了，可以抛出错误或者生成一个提示性的空图片
+            # 这里我们选择抛出错误，因为通常这意味着数据不足或过滤条件太严格
+            logger.warning("根据最小词频过滤后，没有足够的词汇来生成词云。")
+            raise ValueError("过滤后无有效词频数据，无法生成词云")
+
         # 获取图片存储路径
         image_path = get_image_path(session_id, timestamp)
 
@@ -702,7 +736,7 @@ class WordCloudGenerator:
 
         try:
             # 生成词云
-            self.wordcloud.generate_from_frequencies(word_counts)
+            self.wordcloud.generate_from_frequencies(filtered_word_counts) # 使用过滤后的词频
 
             # 确保目录存在
             image_path.parent.mkdir(parents=True, exist_ok=True)
@@ -922,3 +956,50 @@ class WordCloudGenerator:
         except Exception as e:
             logger.warning(f"解析颜色名称失败: {color_str}, {e}")
             return False  # 解析失败，默认为浅色
+
+    def _filter_word_frequencies(self, word_counts: Dict[str, int]) -> Dict[str, int]:
+        """
+        过滤词频，移除频率过低的词汇，让词云更加利落
+        
+        Args:
+            word_counts: 原始词频统计
+            
+        Returns:
+            过滤后的词频统计
+        """
+        if not word_counts:
+            return word_counts
+            
+        # 计算词频统计信息
+        frequencies = list(word_counts.values())
+        total_words = len(frequencies)
+        max_freq = max(frequencies)
+        
+        # 动态计算最小频率阈值
+        # 如果词汇总数很多，设置更严格的过滤条件
+        if total_words > self.max_words * 3:
+            # 词汇过多时，使用更严格的过滤
+            min_freq_threshold = max(2, max_freq * 0.02)  # 至少2次，或最高频的2%
+        elif total_words > self.max_words * 2:
+            # 词汇较多时，适中过滤
+            min_freq_threshold = max(1, max_freq * 0.01)  # 至少1次，或最高频的1%
+        else:
+            # 词汇不多时，轻度过滤
+            min_freq_threshold = 1
+            
+        # 过滤低频词
+        filtered_counts = {
+            word: count 
+            for word, count in word_counts.items() 
+            if count >= min_freq_threshold
+        }
+        
+        # 如果过滤后词汇仍然过多，取频率最高的词汇
+        if len(filtered_counts) > self.max_words:
+            # 按频率排序，取前max_words个
+            sorted_words = sorted(filtered_counts.items(), key=lambda x: x[1], reverse=True)
+            filtered_counts = dict(sorted_words[:self.max_words])
+            
+        logger.info(f"词频过滤: 原始词汇{total_words}个 -> 过滤后{len(filtered_counts)}个，最小频率阈值: {min_freq_threshold}")
+        
+        return filtered_counts

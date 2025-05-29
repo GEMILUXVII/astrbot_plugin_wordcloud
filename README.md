@@ -5,7 +5,7 @@
 <br>
 
 <div align="center">
-  <a href="#-更新日志"><img src="https://img.shields.io/badge/version-v1.3.7-blueviolet?style=for-the-badge" alt="Version"></a>
+  <a href="#-更新日志"><img src="https://img.shields.io/badge/version-v1.3.8-blueviolet?style=for-the-badge" alt="Version"></a>
   <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=for-the-badge" alt="License"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white" alt="Python Version"></a>
   <a href="https://github.com/AstrBotDevs/AstrBot"><img src="https://img.shields.io/badge/AstrBot-Compatible-00d4aa?style=for-the-badge&logo=robot&logoColor=white" alt="AstrBot Compatible"></a>
@@ -147,6 +147,13 @@ CloudRank 插件基于 AstrBot 平台开发：
     <td>参与词频统计的最小词语长度</td>
     <td><code>2</code></td>
     <td>小于此长度的词语（通常是单个字或无意义的短词）将被忽略</td>
+  </tr>
+  <tr>
+    <td><code>min_word_frequency</code></td>
+    <td><code>int</code></td>
+    <td>最小词频</td>
+    <td><code>2</code></td>
+    <td>出现次数低于此值的词将被过滤，以优化词云视觉效果，设为1则不过滤</td>
   </tr>
   <tr>
     <td><code>min_font_size</code></td>
@@ -436,6 +443,18 @@ AstrBot/data/plugin_data/cloudrank/
   - **解决**: 确保消息格式完全匹配 `constant.py` 中定义的关键词，包括空格和标点符号。确保消息不以 `/` 开头，否则会被视为命令而非普通消息。
 
 ## 🔄 更新日志
+
+#### v1.3.8（2025-05-29）
+
+**新功能：**
+
+- 新增 `min_word_frequency` 配置项，允许用户设置词云生成时词语的最小出现频率。
+- 出现次数低于此配置值的词语将被过滤，有助于生成更清晰、更聚焦高频词汇的词云。
+- 默认值为 `2`，即词语至少出现 2 次才会被统计。设置为 `1` 则不进行词频过滤。
+
+**配置更新：**
+
+- `min_word_frequency`: 控制词云中词语的最小出现次数（默认值：2）。
 
 #### v1.3.7（2025-05-29）
 
