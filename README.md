@@ -54,8 +54,8 @@ CloudRank 插件是一款用于 AstrBot 的插件，能够将群聊或私聊中�
 
 CloudRank 插件基于 AstrBot 平台开发：
 
-- **QQ**：支持 QQ 群聊和私聊的词云生成
-- **微信**：支持基于 WeChatPadPro 微信群聊和私聊的词云生成
+- **QQ**：支持 QQ 群聊的词云生成
+- **微信**：支持基于 WeChatPadPro 微信群聊的词云生成(目前存在一定 bug)
 
 ## 🚀 安装方法
 
