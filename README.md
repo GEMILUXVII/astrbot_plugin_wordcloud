@@ -452,17 +452,19 @@ AstrBot/data/plugin_data/cloudrank/
 
 #### **v1.3.8-rev1** (2025-05-30)
 
-**✨ 改进**:
+**效果改进**:
 
 - 移除了词云生成时对最大字体大小 (`max_font_size`) 的硬编码上限(原为 120)及 `relative_scaling` 参数的固定设置，允许用户通过配置更自由地控制字体大小
-  **🐛 修复**:
+
+**修复**:
+
 - 修正 `min_word_frequency` 配置项的默认值为 `1`
 - 统一了 `_conf_schema.json`, `main.py` 和 `README.md` 中关于 `min_word_frequency` 的默认值描述
 - 调整了 `README.md` 中配置项表格的顺序，使其与 `_conf_schema.json` 一致
 
 #### **v1.3.8** (2025-05-30)
 
-**✨ 新增**:
+**新增功能**:
 
 - 新增 `min_word_frequency` 配置项，允许用户设置词云生成时词语的最小出现频率
 - 出现次数低于此配置值的词语将被过滤，有助于生成更清晰、更聚焦高频词汇的词云
