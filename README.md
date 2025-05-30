@@ -5,7 +5,7 @@
 <br>
 
 <div align="center">
-  <a href="#-更新日志"><img src="https://img.shields.io/badge/version-v1.3.8-blueviolet?style=for-the-badge" alt="Version"></a>
+  <a href="#-更新日志"><img src="https://img.shields.io/badge/version-v1.3.8--rev1-blueviolet?style=for-the-badge" alt="Version"></a>
   <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=for-the-badge" alt="License"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white" alt="Python Version"></a>
   <a href="https://github.com/AstrBotDevs/AstrBot"><img src="https://img.shields.io/badge/AstrBot-Compatible-00d4aa?style=for-the-badge&logo=robot&logoColor=white" alt="AstrBot Compatible"></a>
@@ -55,7 +55,7 @@ CloudRank 插件是一款用于 AstrBot 的插件，能够将群聊或私聊中�
 CloudRank 插件基于 AstrBot 平台开发：
 
 - **QQ**：支持 QQ 群聊的词云生成
-- **微信**：支持基于 WeChatPadPro 微信群聊的词云生成(目前存在一定 bug)
+- **微信**：支持基于 WeChatPadPro 微信群聊的词云生成
 
 ## 🚀 安装方法
 
@@ -98,6 +98,13 @@ CloudRank 插件基于 AstrBot 平台开发：
     <td>自动生成词云的 CRON 表达式</td>
     <td><code>0 20 * * *</code></td>
     <td>标准 CRON 格式 (<code>分 时 日 月 周</code>)。例如，默认值表示每天晚上20:00执行</td>
+  </tr>
+  <tr>
+    <td><code>timezone</code></td>
+    <td><code>string</code></td>
+    <td>自定义插件使用的时区</td>
+    <td><code>Asia/Shanghai</code></td>
+    <td>有效的 IANA 时区名称，例如 `Asia/Shanghai`, `Europe/London`, `America/New_York`, 或者 `UTC`</td>
   </tr>
   <tr>
     <td><code>daily_generate_enabled</code></td>
@@ -152,7 +159,7 @@ CloudRank 插件基于 AstrBot 平台开发：
     <td><code>min_word_frequency</code></td>
     <td><code>int</code></td>
     <td>最小词频</td>
-    <td><code>2</code></td>
+    <td><code>1</code></td>
     <td>出现次数低于此值的词将被过滤，以优化词云视觉效果，设为1则不过滤</td>
   </tr>
   <tr>
@@ -246,13 +253,6 @@ CloudRank 插件基于 AstrBot 平台开发：
     <td><code>false</code></td>
     <td><code>true</code> 时，插件会在控制台输出更详细的运行信息，主要用于开发者排查问题</td>
   </tr>
-  <tr>
-    <td><code>timezone</code></td>
-    <td><code>string</code></td>
-    <td>自定义插件使用的时区</td>
-    <td><code>Asia/Shanghai</code></td>
-    <td>有效的 IANA 时区名称，例如 `Asia/Shanghai`, `Europe/London`, `America/New_York`, 或者 `UTC`</td>
-  </tr>
 </table>
 
 ## 💻 使用命令
@@ -329,7 +329,9 @@ CloudRank 插件基于 AstrBot 平台开发：
   </tr>
 </table>
 
-> **提示**：使用自然语言关键词可以更方便地触发功能，无需记忆复杂的命令格式。
+[!NOTE]
+
+> 使用自然语言关键词可以更方便地触发功能，无需记忆复杂的命令格式。
 
 ### 自定义关键词
 
@@ -349,7 +351,9 @@ NATURAL_KEYWORDS = {
 
 ## 🖼️ 词云样例
 
-![Image](https://i.imgur.com/nWF5FQB.png)
+![Image](https://i.imgur.com/GdOOd7y.png)
+
+<small><i>上图词云样例采用以下主要配置生成：`max_word_count`: 50, `min_word_length`: 2, `min_word_frequency`: 2, `min_font_size`: 8, `max_font_size`: 170, `background_color`: pink, `colormap`: magma, `font_path`: (使用内置霞鹜文楷), `shape`: circle.</i></small>
 
 ## 📁 项目结构 (简化)
 
@@ -444,17 +448,25 @@ AstrBot/data/plugin_data/cloudrank/
 
 ## 🔄 更新日志
 
-#### v1.3.8（2025-05-29）
+#### **v1.3.8-rev1** (2025-05-30)
 
-**新功能：**
+- **✨ 改进**:
+  - 移除了词云生成时对最大字体大小 (`max_font_size`) 的硬编码上限(原为 120)及 `relative_scaling` 参数的固定设置，允许用户通过配置更自由地控制字体大小
+- **🐛 修复**:
+  - 修正 `min_word_frequency` 配置项的默认值为 `1`
+  - 统一了 `_conf_schema.json`, `main.py` 和 `README.md` 中关于 `min_word_frequency` 的默认值描述
+  - 调整了 `README.md` 中配置项表格的顺序，使其与 `_conf_schema.json` 一致
 
-- 新增 `min_word_frequency` 配置项，允许用户设置词云生成时词语的最小出现频率。
-- 出现次数低于此配置值的词语将被过滤，有助于生成更清晰、更聚焦高频词汇的词云。
-- 默认值为 `2`，即词语至少出现 2 次才会被统计。设置为 `1` 则不进行词频过滤。
+#### **v1.3.8** (2025-05-30)
 
-**配置更新：**
+- **✨ 新增**:
 
-- `min_word_frequency`: 控制词云中词语的最小出现次数（默认值：2）。
+  - 新增 `min_word_frequency` 配置项，允许用户设置词云生成时词语的最小出现频率
+  - 出现次数低于此配置值的词语将被过滤，有助于生成更清晰、更聚焦高频词汇的词云
+  - 默认值为 `2`，即词语至少出现 2 次才会被统计。设置为 `1` 则不进行词频过滤
+
+- **配置更新：**
+  - `min_word_frequency`: 控制词云中词语的最小出现次数（默认值：2）
 
 #### v1.3.7（2025-05-29）
 

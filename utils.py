@@ -411,6 +411,7 @@ def extract_group_id_from_session(session_id: str) -> Optional[str]:
 
         # 特别处理带 "@chatroom" 的格式（如 wechatpadpro_group_123456789@chatroom）
         import re
+
         match = re.match(r".+?_group_(\d+@chatroom)", session_id)
         if match:
             return match.group(1)
