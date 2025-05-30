@@ -14,7 +14,7 @@
     "timezone": {
         "type": "string",
         "description": "自定义插件使用的时区 (IANA时区名称)",
-        "hint": "请输入有效的IANA时区名称，例如：Asia/Shanghai, Europe/London, America/New_York, UTC。您可以参考维基百科的列表 (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) 或通过 Python 的 pytz.all_timezones 获取。这将用于确定每日生成词云和cron表达式的本地时间。",
+        "hint": "请输入有效的IANA时区名称，例如：Asia/Shanghai, Europe/London, America/New_York, UTC，您可以参考维基百科的列表 (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) 或通过 Python 的 pytz.all_timezones 获取，这将用于确定每日生成词云和cron表达式的本地时间，",
         "default": "Asia/Shanghai"
     },
     "daily_generate_enabled": {
@@ -37,8 +37,8 @@
     },
     "enabled_group_list": {
         "type": "string",
-        "description": "启用词云功能的群聊列表",
-        "hint": "以逗号分隔的群号列表，如：123456789,987654321。仅在此处填写的群号才会启用词云功能。留空则默认所有群都不启用。",
+        "description": "启用今日词云功能的群聊列表",
+        "hint": "以逗号分隔的群号列表，如：123456789,987654321，仅在此处填写的群号才会启用词云功能，留空则默认所有群都不启用，",
         "default": ""
     },
     "history_days": {
@@ -63,7 +63,7 @@
         "type": "int",
         "description": "最小词频",
         "hint": "出现次数低于此值的词将被过滤，以优化词云视觉效果，设为1则不过滤",
-        "default": 2
+        "default": 1
     },
     "background_color": {
         "type": "string",
@@ -81,32 +81,32 @@
     "font_path": {
         "type": "string",
         "description": "字体路径",
-        "hint": "可使用相对路径或绝对路径。留空使用默认字体。",
+        "hint": "可使用相对路径或绝对路径，留空使用默认字体，",
         "default": ""
     },
     "stop_words_file": {
         "type": "string",
         "description": "停用词文件路径",
-        "hint": "可使用相对路径或绝对路径。留空使用默认停用词。",
+        "hint": "可使用相对路径或绝对路径，留空使用默认停用词，",
         "default": "stop_words.txt"
     },
     "include_bot_messages": {
         "type": "bool",
         "description": "是否将机器人自身的消息计入词云统计",
-        "hint": "开启后，机器人自己发送的消息也会被用于生成词云。默认为关闭。",
+        "hint": "开启后，机器人自己发送的消息也会被用于生成词云，默认为关闭，",
         "default": false
     },
     "shape": {
         "type": "string",
         "description": "词云形状",
-        "hint": "决定词云的整体形状。如果设置了自定义蒙版路径，则此选项无效。",
+        "hint": "决定词云的整体形状，如果设置了自定义蒙版路径，则此选项无效，",
         "default": "rectangle",
         "options": ["rectangle", "circle", "diamond", "triangle_up"]
     },
     "custom_mask_path": {
         "type": "string",
         "description": "自定义蒙版图片路径",
-        "hint": "提供一个图片文件的路径作为词云的形状蒙版。图片中白色区域将被忽略，非白色区域将用于绘制词语。如果设置了此路径，则预设的'形状'选项将无效。支持相对路径（相对于插件数据目录下的resources/images/子目录）或绝对路径。",
+        "hint": "提供一个图片文件的路径作为词云的形状蒙版，图片中白色区域将被忽略，非白色区域将用于绘制词语，如果设置了此路径，则预设的'形状'选项将无效，支持相对路径（相对于插件数据目录下的resources/images/子目录）或绝对路径，",
         "default": ""
     },
     "min_font_size": {
@@ -142,7 +142,7 @@
     "debug_mode": {
         "type": "bool",
         "description": "启用详细调试日志",
-        "hint": "开启后会在控制台输出非常详细的调度器和任务执行日志，用于问题排查。请仅在需要时开启。",
+        "hint": "开启后会在控制台输出非常详细的调度器和任务执行日志，用于问题排查，请仅在需要时开启，",
         "default": false,
         "obvious_hint": false
     }

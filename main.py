@@ -44,7 +44,7 @@ from . import constant as constant_module
     "CloudRank",
     "GEMILUXVII",
     "词云与排名插件 (CloudRank) 是一个文本可视化工具，能将聊天记录关键词以词云形式展现，并显示用户活跃度排行榜，支持定时或手动生成。",
-    "1.3.8",
+    "1.3.8-rev1",
     "https://github.com/GEMILUXVII/astrbot_plugin_cloudrank",
 )
 class WordCloudPlugin(Star):
@@ -306,17 +306,19 @@ class WordCloudPlugin(Star):
         """初始化词云生成器"""
         # 确保DATA_DIR已初始化
         if constant_module.DATA_DIR is None:
-            raise RuntimeError("DATA_DIR未初始化，无法创建词云生成器")        # 获取配置参数
+            raise RuntimeError("DATA_DIR未初始化，无法创建词云生成器")  # 获取配置参数
         max_words = self.config.get("max_word_count", 100)
         min_word_length = self.config.get("min_word_length", 2)
-        min_word_frequency = self.config.get("min_word_frequency", 2)  # 新增：读取最小词频配置
+        min_word_frequency = self.config.get(
+            "min_word_frequency", 1
+        )  # 新增：读取最小词频配置
         background_color = self.config.get("background_color", "white")
         colormap = self.config.get("colormap", "viridis")
         shape = self.config.get("shape", "rectangle")  # 默认形状为矩形
         custom_mask_path_config = self.config.get(
             "custom_mask_path", ""
         )  # 读取自定义蒙版路径配置
-        
+
         # 获取字体大小配置
         min_font_size = self.config.get("min_font_size", 8)
         max_font_size = self.config.get("max_font_size", 200)
@@ -364,7 +366,9 @@ class WordCloudPlugin(Star):
                 plugin_stopwords_path = constant_module.PLUGIN_DIR / stop_words_file
                 if os.path.exists(plugin_stopwords_path):
                     stop_words_file = str(plugin_stopwords_path)
-                    logger.info(f"使用插件目录中的停用词文件: {stop_words_file}")        # 初始化词云生成器
+                    logger.info(
+                        f"使用插件目录中的停用词文件: {stop_words_file}"
+                    )  # 初始化词云生成器
         self.wordcloud_generator = WordCloudGenerator(
             max_words=max_words,
             min_word_length=min_word_length,
@@ -845,6 +849,16 @@ class WordCloudPlugin(Star):
                 "霞鹜文楷是一款开源中文字体",
                 "该字体基于FONTWORKS出品字体Klee One衍生",
                 "支持简体中文、繁体中文和日文等",
+                "霞鹜文楷的开源协议允许自由使用和分发。",
+                "许多用户喜欢霞鹜文楷优雅的笔触和良好的阅读体验。",
+                "霞鹜文楷项目在GitHub上持续更新和维护。",
+                "这款字体包含了丰富的字重，可以满足不同排版需求。",
+                "霞鹜文楷的设计灵感来源于古籍木刻字体。",
+                "社区贡献者们也为霞鹜文楷的完善做出了努力。",
+                "霞鹜文楷在数字阅读和设计领域广受欢迎。",
+                "除了常规版本，霞鹜文楷还有屏幕阅读优化的版本。",
+                "霞鹜文楷的字形清晰，适合长时间阅读。",
+                "该字体也常被用于制作演示文稿和设计作品。",
                 "词云是一种文本可视化方式",
                 "它将文本中词语的频率以图形方式展示",
                 "频率越高的词语，在词云中显示得越大",
@@ -863,6 +877,21 @@ class WordCloudPlugin(Star):
                 "词向量是自然语言处理中的一种技术",
                 "它将词语映射到向量空间中",
                 "词云是文本可视化的一种流行工具",
+                "开源软件鼓励协作和透明度。",
+                "字体设计是视觉传达的重要组成部分。",
+                "数据可视化有助于理解复杂数据。",
+                "聊天机器人正在改变我们与技术交互的方式。",
+                "API是不同软件系统之间通信的桥梁。",
+                "版本控制系统如Git对于软件开发至关重要。",
+                "云计算提供了按需计算资源。",
+                "物联网连接了物理世界和数字世界。",
+                "用户体验设计关注于创建易用且令人愉悦的产品。",
+                "敏捷开发是一种迭代的软件开发方法。",
+                "信息安全在数字时代至关重要。",
+                "大数据分析揭示了隐藏的模式和洞察。",
+                "人工智能伦理是确保AI负责任发展的关键。",
+                "编程不仅仅是写代码，更是解决问题的艺术。",
+                "持续学习是技术领域成功的关键。",
             ]
 
             # 生成词频统计
@@ -893,7 +922,6 @@ class WordCloudPlugin(Star):
     async def today_command(self, event: AstrMessageEvent):
         """生成当前会话今天的词云图"""
         try:
-            # target_session_id = event.unified_msg_origin # 旧的获取方式
             target_session_id_for_query: str
             group_id_val = event.get_group_id()
             platform_name = event.get_platform_name()
