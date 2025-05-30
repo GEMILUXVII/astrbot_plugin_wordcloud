@@ -353,7 +353,8 @@ NATURAL_KEYWORDS = {
 
 ![Image](https://i.imgur.com/GdOOd7y.png)
 
-[!NOTE]
+> [!NOTE]
+>
 > <small><i>上图词云样例采用以下主要配置生成：`max_word_count`: 50, `min_word_length`: 2, `min_word_frequency`: 2, `min_font_size`: 8, `max_font_size`: 170, `background_color`: pink, `colormap`: magma, `font_path`: (使用内置霞鹜文楷), `shape`: circle.</i></small>
 
 ## 📁 项目结构 (简化)
