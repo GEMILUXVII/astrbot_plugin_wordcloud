@@ -20,7 +20,7 @@
 ## 👥 插件贡献者
 
 <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=GEMILUXVII/astrbot_plugin_cloudrank" />
+  <img src="https://contrib.rocks/image?repo=GEMILUXVII/astrbot_plugin_cloudrank&t=20250601" />
 </a>
 
 ## 📝 介绍
