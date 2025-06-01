@@ -22,6 +22,7 @@
 <div>
   <a href="https://github.com/GEMILUXVII">
     <img src="https://github.com/GEMILUXVII.png" width="50" height="50" alt="GEMILUXVII">
+  </a>
   <a href="https://github.com/xu-wish">
     <img src="https://github.com/xu-wish.png" width="50" height="50" alt="xu-wish">
   </a>
