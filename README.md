@@ -19,15 +19,14 @@
 
 ## 👥 插件贡献者
 
-<div>
-  <a href="https://github.com/GEMILUXVII">
-    <img src="https://github.com/GEMILUXVII.png" width="50" height="50" alt="GEMILUXVII">
+<p align="center">
+  <a href="https://github.com/GEMILUXVII" target="_blank">
+    <img src="https://github.com/GEMILUXVII.png" width="60" height="60" alt="GEMILUXVII" style="border-radius: 50%; margin: 0 10px;">
   </a>
-  <a href="https://github.com/xu-wish">
-    <img src="https://github.com/xu-wish.png" width="50" height="50" alt="xu-wish">
+  <a href="https://github.com/xu-wish" target="_blank">
+    <img src="https://github.com/xu-wish.png" width="60" height="60" alt="xu-wish" style="border-radius: 50%; margin: 0 10px;">
   </a>
-  <!-- 如果有其他贡献者，可以按照上面的格式添加 -->
-</div>
+</p>
 
 ## 📝 介绍
 
