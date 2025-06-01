@@ -19,12 +19,9 @@
 
 ## 👥 插件贡献者
 
-<div align="center">
-  <a href="https://github.com/GEMILUXVII">
-    <img src="https://github.com/GEMILUXVII.png?size=100" width="100px" alt="GEMILUXVII" style="border-radius:50%;margin-right:10px;"/>
-  </a>
-  <a href="https://github.com/xu-wish">
-    <img src="https://github.com/xu-wish.png?size=100" width="100px" alt="xu-wish" style="border-radius:50%;"/>
+<div>
+  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/graphs/contributors">
+    <img src="https://contributors-img.web.app/image?repo=GEMILUXVII/astrbot_plugin_cloudrank&max=10&columns=5&no-name=true&size=80&anon=false&time=1717171799" />
   </a>
 </div>
 
