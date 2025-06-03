@@ -24,6 +24,8 @@
   </a>
 </div>
 
+![Alt](https://repobeats.axiom.co/api/embed/dd7cec6e773d144737f5b6ed13b9d1f4db4dbdcf.svg "Repobeats analytics image")
+
 ## 📝 介绍
 
 CloudRank 插件是一款用于 AstrBot 的插件，能够将群聊或私聊中的文本消息进行分析，并生成美观的词云图像。通过词云，用户可以直观地了解一段时间内聊天内容的关键词和热点话题。插件同时提供用户活跃度排名功能，展示群内最活跃的成员。插件支持自动定时生成和手动触发生成，并提供了丰富的配置选项，让您可以定制个性化的词云和排名显示。
