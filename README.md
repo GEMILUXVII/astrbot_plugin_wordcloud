@@ -20,7 +20,7 @@
 
 <div>
   <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/graphs/contributors">
-    <img src="https://contributors-img.web.app/image?repo=GEMILUXVII/astrbot_plugin_cloudrank&max=10&columns=5&no-name=true&size=80&anon=false&time=1717171799" />
+    <img src="https://contrib.rocks/image?repo=GEMILUXVII/astrbot_plugin_cloudrank" />
   </a>
 </div>
 
