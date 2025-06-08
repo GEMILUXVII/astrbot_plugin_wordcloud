@@ -1,19 +1,19 @@
-# <div align="center">☁️ CloudRank</div>
+# <div align="center"> ☁️ CloudRank </div>
 
-<div align="center"><em>智能词云分析 · 聊天热度排行</em></div>
+<div align="center"> <em> 智能词云分析 · 聊天热度排行 </em> </div>
 
 <br>
 
-<div align="center">  <a href="#-更新日志"><img src="https://img.shields.io/badge/version-v1.3.8--rev1-9644F4?style=for-the-badge" alt="Version"></a>
-  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-E53935?style=for-the-badge" alt="License"></a>
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python Version"></a>
-  <a href="https://github.com/AstrBotDevs/AstrBot"><img src="https://img.shields.io/badge/AstrBot-Compatible-00BFA5?style=for-the-badge&logo=robot&logoColor=white" alt="AstrBot Compatible"></a>
+<div align="center">  <a href="#-更新日志"> <img src="https://img.shields.io/badge/version-v1.3.8--rev1-9644F4?style=for-the-badge" alt="Version"> </a>
+  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/blob/main/LICENSE"> <img src="https://img.shields.io/badge/license-AGPL--3.0-E53935?style=for-the-badge" alt="License"> </a>
+  <a href="https://www.python.org/downloads/"> <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python Version"> </a>
+  <a href="https://github.com/AstrBotDevs/AstrBot"> <img src="https://img.shields.io/badge/AstrBot-Compatible-00BFA5?style=for-the-badge&logo=robot&logoColor=white" alt="AstrBot Compatible"> </a>
 </div>
 
 <div align="center">
-  <a href="https://github.com/botuniverse/onebot-11"><img src="https://img.shields.io/badge/OneBotv11-AIOCQHTTP-FF9800?style=for-the-badge&logo=qq&logoColor=white" alt="OneBot v11 Support"></a>
-  <a href="https://github.com/WeChatPadPro/WeChatPadPro"><img src="https://img.shields.io/badge/WeChat-PadPro-07C160?style=for-the-badge&logo=wechat&logoColor=white" alt="WeChatPadPro Support"></a>
-  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/commits/main"><img src="https://img.shields.io/badge/updated-2025--05--30-0097A7?style=for-the-badge&logo=calendar&logoColor=white" alt="Last Updated"></a>
+  <a href="https://github.com/botuniverse/onebot-11"> <img src="https://img.shields.io/badge/OneBotv11-AIOCQHTTP-FF9800?style=for-the-badge&logo=qq&logoColor=white" alt="OneBot v11 Support"> </a>
+  <a href="https://github.com/WeChatPadPro/WeChatPadPro"> <img src="https://img.shields.io/badge/WeChat-PadPro-07C160?style=for-the-badge&logo=wechat&logoColor=white" alt="WeChatPadPro Support"> </a>
+  <a href="https://github.com/GEMILUXVII/astrbot_plugin_cloudrank/commits/main"> <img src="https://img.shields.io/badge/updated-2025--05--30-0097A7?style=for-the-badge&logo=calendar&logoColor=white" alt="Last Updated"> </a>
 </div>
 
 ## 👥 插件贡献者
@@ -84,179 +84,179 @@ CloudRank 插件基于 AstrBot 平台开发：
 
 <table width="100%">
   <tr>
-    <th width="15%">配置项</th>
-    <th width="8%">类型</th>
-    <th width="25%">描述</th>
-    <th width="12%">默认值</th>
-    <th width="40%">效果说明</th>
+    <th width="15%"> 配置项 </th>
+    <th width="8%"> 类型 </th>
+    <th width="25%"> 描述 </th>
+    <th width="12%"> 默认值 </th>
+    <th width="40%"> 效果说明 </th>
   </tr>
   <tr>
-    <td><code>auto_generate_enabled</code></td>
-    <td><code>bool</code></td>
-    <td>是否启用自动生成词云功能</td>
-    <td><code>true</code></td>
-    <td><code>true</code> 时，插件会根据 <code>auto_generate_cron</code> 的设置定时生成词云</td>
+    <td> <code> auto_generate_enabled </code> </td>
+    <td> <code> bool </code> </td>
+    <td> 是否启用自动生成词云功能 </td>
+    <td> <code> true </code> </td>
+    <td> <code> true </code> 时，插件会根据 <code> auto_generate_cron </code> 的设置定时生成词云 </td>
   </tr>
   <tr>
-    <td><code>auto_generate_cron</code></td>
-    <td><code>string</code></td>
-    <td>自动生成词云的 CRON 表达式</td>
-    <td><code>0 20 * * *</code></td>
-    <td>标准 CRON 格式 (<code>分 时 日 月 周</code>)。例如，默认值表示每天晚上20:00执行</td>
+    <td> <code> auto_generate_cron </code> </td>
+    <td> <code> string </code> </td>
+    <td> 自动生成词云的 CRON 表达式 </td>
+    <td> <code> 0 20 * * *</code> </td>
+    <td> 标准 CRON 格式 (<code> 分 时 日 月 周 </code>)。例如，默认值表示每天晚上 20:00 执行 </td>
   </tr>
   <tr>
-    <td><code>timezone</code></td>
-    <td><code>string</code></td>
-    <td>自定义插件使用的时区</td>
-    <td><code>Asia/Shanghai</code></td>
-    <td>有效的 IANA 时区名称，例如 `Asia/Shanghai`, `Europe/London`, `America/New_York`, 或者 `UTC`</td>
+    <td> <code> timezone </code> </td>
+    <td> <code> string </code> </td>
+    <td> 自定义插件使用的时区 </td>
+    <td> <code> Asia/Shanghai </code> </td>
+    <td> 有效的 IANA 时区名称，例如 `Asia/Shanghai`, `Europe/London`, `America/New_York`, 或者 `UTC` </td>
   </tr>
   <tr>
-    <td><code>daily_generate_enabled</code></td>
-    <td><code>bool</code></td>
-    <td>是否启用每日词云生成功能</td>
-    <td><code>true</code></td>
-    <td><code>true</code> 时，插件会根据 <code>daily_generate_time</code> 的设置每日生成词云</td>
+    <td> <code> daily_generate_enabled </code> </td>
+    <td> <code> bool </code> </td>
+    <td> 是否启用每日词云生成功能 </td>
+    <td> <code> true </code> </td>
+    <td> <code> true </code> 时，插件会根据 <code> daily_generate_time </code> 的设置每日生成词云 </td>
   </tr>
   <tr>
-    <td><code>daily_generate_time</code></td>
-    <td><code>string</code></td>
-    <td>每日词云的生成时间</td>
-    <td><code>23:30</code></td>
-    <td>格式为 <code>HH:MM</code>。例如，<code>23:30</code> 表示每天晚上11点30分</td>
+    <td> <code> daily_generate_time </code> </td>
+    <td> <code> string </code> </td>
+    <td> 每日词云的生成时间 </td>
+    <td> <code> 23:30 </code> </td>
+    <td> 格式为 <code> HH: MM </code>。例如，<code> 23:30 </code> 表示每天晚上 11 点 30 分 </td>
   </tr>
   <tr>
-    <td><code>daily_summary_title</code></td>
-    <td><code>string</code></td>
-    <td>每日词云图片的标题模板</td>
-    <td><code>"{date} {group_name} 今日词云"</code></td>
-    <td>支持占位符: <code>{date}</code> (当前日期), <code>{group_name}</code> (群聊名称)</td>
+    <td> <code> daily_summary_title </code> </td>
+    <td> <code> string </code> </td>
+    <td> 每日词云图片的标题模板 </td>
+    <td> <code> "{date} {group_name} 今日词云" </code> </td>
+    <td> 支持占位符: <code>{date}</code> (当前日期), <code>{group_name}</code> (群聊名称)</td>
   </tr>
   <tr>
-    <td><code>enabled_group_list</code></td>
-    <td><code>string</code></td>
-    <td>启用词云功能的群聊列表</td>
-    <td><code>""</code> (空字符串)</td>
-    <td>以英文逗号分隔的群号列表，例如 <code>123456789,987654321</code>。仅在此处填写的群号才会启用词云功能。如果留空，则默认所有群聊都不启用词云功能</td>
+    <td> <code> enabled_group_list </code> </td>
+    <td> <code> string </code> </td>
+    <td> 启用词云功能的群聊列表 </td>
+    <td> <code> "" </code> (空字符串)</td>
+    <td> 以英文逗号分隔的群号列表，例如 <code> 123456789,987654321 </code>。仅在此处填写的群号才会启用词云功能。如果留空，则默认所有群聊都不启用词云功能 </td>
   </tr>
   <tr>
-    <td><code>history_days</code></td>
-    <td><code>int</code></td>
-    <td>手动生成词云时，默认统计的历史消息天数</td>
-    <td><code>7</code></td>
-    <td>当用户使用 <code>/wordcloud</code> 命令且未指定天数时，将使用此值</td>
+    <td> <code> history_days </code> </td>
+    <td> <code> int </code> </td>
+    <td> 手动生成词云时，默认统计的历史消息天数 </td>
+    <td> <code> 7 </code> </td>
+    <td> 当用户使用 <code>/wordcloud </code> 命令且未指定天数时，将使用此值 </td>
   </tr>
   <tr>
-    <td><code>max_word_count</code></td>
-    <td><code>int</code></td>
-    <td>词云图片中显示的最大词语数量</td>
-    <td><code>100</code></td>
-    <td>控制词云的密集程度和信息量。建议值在 50 到 200 之间</td>
+    <td> <code> max_word_count </code> </td>
+    <td> <code> int </code> </td>
+    <td> 词云图片中显示的最大词语数量 </td>
+    <td> <code> 100 </code> </td>
+    <td> 控制词云的密集程度和信息量。建议值在 50 到 200 之间 </td>
   </tr>
   <tr>
-    <td><code>min_word_length</code></td>
-    <td><code>int</code></td>
-    <td>参与词频统计的最小词语长度</td>
-    <td><code>2</code></td>
-    <td>小于此长度的词语（通常是单个字或无意义的短词）将被忽略</td>
+    <td> <code> min_word_length </code> </td>
+    <td> <code> int </code> </td>
+    <td> 参与词频统计的最小词语长度 </td>
+    <td> <code> 2 </code> </td>
+    <td> 小于此长度的词语（通常是单个字或无意义的短词）将被忽略 </td>
   </tr>
   <tr>
-    <td><code>min_word_frequency</code></td>
-    <td><code>int</code></td>
-    <td>最小词频</td>
-    <td><code>1</code></td>
-    <td>出现次数低于此值的词将被过滤，以优化词云视觉效果，设为1则不过滤</td>
+    <td> <code> min_word_frequency </code> </td>
+    <td> <code> int </code> </td>
+    <td> 最小词频 </td>
+    <td> <code> 1 </code> </td>
+    <td> 出现次数低于此值的词将被过滤，以优化词云视觉效果，设为 1 则不过滤 </td>
   </tr>
   <tr>
-    <td><code>min_font_size</code></td>
-    <td><code>int</code></td>
-    <td>词云中最小字体大小</td>
-    <td><code>8</code></td>
-    <td>控制低频词汇的最小显示字体大小，与max_font_size配合调整词云的字体大小对比度</td>
+    <td> <code> min_font_size </code> </td>
+    <td> <code> int </code> </td>
+    <td> 词云中最小字体大小 </td>
+    <td> <code> 8 </code> </td>
+    <td> 控制低频词汇的最小显示字体大小，与 max_font_size 配合调整词云的字体大小对比度 </td>
   </tr>
   <tr>
-    <td><code>max_font_size</code></td>
-    <td><code>int</code></td>
-    <td>词云中最大字体大小</td>
-    <td><code>170</code></td>
-    <td>控制高频词汇的最大显示字体大小，与min_font_size配合调整词云的字体大小对比度，使高频词更加突出</td>
+    <td> <code> max_font_size </code> </td>
+    <td> <code> int </code> </td>
+    <td> 词云中最大字体大小 </td>
+    <td> <code> 170 </code> </td>
+    <td> 控制高频词汇的最大显示字体大小，与 min_font_size 配合调整词云的字体大小对比度，使高频词更加突出 </td>
   </tr>
   <tr>
-    <td><code>background_color</code></td>
-    <td><code>string</code></td>
-    <td>词云图片的背景颜色</td>
-    <td><code>white</code></td>
-    <td>可以是颜色名称 (如 <code>white</code>, <code>black</code>, <code>lightyellow</code>) 或十六进制颜色代码 (如 <code>#FFFFFF</code>)</td>
+    <td> <code> background_color </code> </td>
+    <td> <code> string </code> </td>
+    <td> 词云图片的背景颜色 </td>
+    <td> <code> white </code> </td>
+    <td> 可以是颜色名称 (如 <code> white </code>, <code> black </code>, <code> lightyellow </code>) 或十六进制颜色代码 (如 <code>#FFFFFF </code>)</td>
   </tr>
   <tr>
-    <td><code>colormap</code></td>
-    <td><code>string</code></td>
-    <td>词云的配色方案，决定词语的颜色</td>
-    <td><code>viridis</code></td>
-    <td>不同的 Colormap 会给词云带来完全不同的视觉风格。可选值包括: <code>viridis</code>, <code>plasma</code>, <code>inferno</code>, <code>rainbow</code>, <code>jet</code> 等</td>
+    <td> <code> colormap </code> </td>
+    <td> <code> string </code> </td>
+    <td> 词云的配色方案，决定词语的颜色 </td>
+    <td> <code> viridis </code> </td>
+    <td> 不同的 Colormap 会给词云带来完全不同的视觉风格。可选值包括: <code> viridis </code>, <code> plasma </code>, <code> inferno </code>, <code> rainbow </code>, <code> jet </code> 等 </td>
   </tr>
   <tr>
-    <td><code>font_path</code></td>
-    <td><code>string</code></td>
-    <td>自定义字体文件的路径</td>
-    <td><code>""</code> (空字符串)</td>
-    <td>如果留空，插件会尝试使用内置的默认字体 (通常是霞鹜文楷) 或系统字体。可指定 <code>.ttf</code> 或 <code>.otf</code> 字体文件</td>
+    <td> <code> font_path </code> </td>
+    <td> <code> string </code> </td>
+    <td> 自定义字体文件的路径 </td>
+    <td> <code> "" </code> (空字符串)</td>
+    <td> 如果留空，插件会尝试使用内置的默认字体 (通常是霞鹜文楷) 或系统字体。可指定 <code>.ttf </code> 或 <code>.otf </code> 字体文件 </td>
   </tr>
   <tr>
-    <td><code>stop_words_file</code></td>
-    <td><code>string</code></td>
-    <td>停用词文件的路径</td>
-    <td><code>stop_words.txt</code></td>
-    <td>指定一个文本文件，每行包含一个要忽略的词语。路径相对于插件 <code>resources/</code> 目录或绝对路径</td>
+    <td> <code> stop_words_file </code> </td>
+    <td> <code> string </code> </td>
+    <td> 停用词文件的路径 </td>
+    <td> <code> stop_words.txt </code> </td>
+    <td> 指定一个文本文件，每行包含一个要忽略的词语。路径相对于插件 <code> resources/</code> 目录或绝对路径 </td>
   </tr>
   <tr>
-    <td><code>include_bot_messages</code></td>
-    <td><code>bool</code></td>
-    <td>是否将机器人自身的消息计入词云统计</td>
-    <td><code>false</code></td>
-    <td><code>true</code> 时，机器人自己发送的消息也会被用于生成词云。默认为关闭</td>
+    <td> <code> include_bot_messages </code> </td>
+    <td> <code> bool </code> </td>
+    <td> 是否将机器人自身的消息计入词云统计 </td>
+    <td> <code> false </code> </td>
+    <td> <code> true </code> 时，机器人自己发送的消息也会被用于生成词云。默认为关闭 </td>
   </tr>
   <tr>
-    <td><code>shape</code></td>
-    <td><code>string</code></td>
-    <td>词云的预设形状</td>
-    <td><code>rectangle</code></td>
-    <td>支持 <code>rectangle</code> (矩形), <code>circle</code> (圆形), <code>diamond</code> (菱形), <code>triangle_up</code> (上三角)。如果设置了下方的"自定义蒙版图片路径"，则此选项无效</td>
+    <td> <code> shape </code> </td>
+    <td> <code> string </code> </td>
+    <td> 词云的预设形状 </td>
+    <td> <code> rectangle </code> </td>
+    <td> 支持 <code> rectangle </code> (矩形), <code> circle </code> (圆形), <code> diamond </code> (菱形), <code> triangle_up </code> (上三角)。如果设置了下方的 "自定义蒙版图片路径"，则此选项无效 </td>
   </tr>
   <tr>
-    <td><code>custom_mask_path</code></td>
-    <td><code>string</code></td>
-    <td>自定义蒙版图片路径</td>
-    <td><code>&quot;&quot;</code> (空字符串)</td>
-    <td>提供一个图片文件的路径作为词云的形状蒙版：图片中白色区域将被忽略，非白色区域将用于绘制词语。如果设置了此路径，则预设的 '形状' 选项将无效。支持相对路径（相对于插件数据目录下的 <code>resources/images/</code> 子目录）或绝对路径</td>
+    <td> <code> custom_mask_path </code> </td>
+    <td> <code> string </code> </td>
+    <td> 自定义蒙版图片路径 </td>
+    <td> <code>&quot;&quot; </code> (空字符串)</td>
+    <td> 提供一个图片文件的路径作为词云的形状蒙版：图片中白色区域将被忽略，非白色区域将用于绘制词语。如果设置了此路径，则预设的 '形状' 选项将无效。支持相对路径（相对于插件数据目录下的 <code> resources/images/</code> 子目录）或绝对路径 </td>
   </tr>
   <tr>
-    <td><code>show_user_ranking</code></td>
-    <td><code>bool</code></td>
-    <td>是否在每日词云中显示用户活跃度排行</td>
-    <td><code>true</code></td>
-    <td><code>true</code> 时，词云生成后会同时显示当天发言最活跃的用户排行榜，包含发言人数统计和贡献度排名</td>
+    <td> <code> show_user_ranking </code> </td>
+    <td> <code> bool </code> </td>
+    <td> 是否在每日词云中显示用户活跃度排行 </td>
+    <td> <code> true </code> </td>
+    <td> <code> true </code> 时，词云生成后会同时显示当天发言最活跃的用户排行榜，包含发言人数统计和贡献度排名 </td>
   </tr>
   <tr>
-    <td><code>ranking_user_count</code></td>
-    <td><code>int</code></td>
-    <td>用户排行榜显示的人数</td>
-    <td><code>5</code></td>
-    <td>设置排行榜显示前多少名活跃用户，建议设置5-10之间的值，过多可能导致排行榜信息过长</td>
+    <td> <code> ranking_user_count </code> </td>
+    <td> <code> int </code> </td>
+    <td> 用户排行榜显示的人数 </td>
+    <td> <code> 5 </code> </td>
+    <td> 设置排行榜显示前多少名活跃用户，建议设置 5-10 之间的值，过多可能导致排行榜信息过长 </td>
   </tr>
   <tr>
-    <td><code>ranking_medals</code></td>
-    <td><code>string</code></td>
-    <td>排行榜奖牌表情</td>
-    <td><code>🥇,🥈,🥉,🏅,🏅</code></td>
-    <td>用逗号分隔的表情符号，前三名会使用前三个表情，其余位置使用后续表情</td>
+    <td> <code> ranking_medals </code> </td>
+    <td> <code> string </code> </td>
+    <td> 排行榜奖牌表情 </td>
+    <td> <code> 🥇, 🥈, 🥉, 🏅, 🏅 </code> </td>
+    <td> 用逗号分隔的表情符号，前三名会使用前三个表情，其余位置使用后续表情 </td>
   </tr>
   <tr>
-    <td><code>debug_mode</code></td>
-    <td><code>bool</code></td>
-    <td>是否启用详细调试日志</td>
-    <td><code>false</code></td>
-    <td><code>true</code> 时，插件会在控制台输出更详细的运行信息，主要用于开发者排查问题</td>
+    <td> <code> debug_mode </code> </td>
+    <td> <code> bool </code> </td>
+    <td> 是否启用详细调试日志 </td>
+    <td> <code> false </code> </td>
+    <td> <code> true </code> 时，插件会在控制台输出更详细的运行信息，主要用于开发者排查问题 </td>
   </tr>
 </table>
 
@@ -266,44 +266,44 @@ CloudRank 插件基于 AstrBot 平台开发：
 
 <table width="100%">
   <tr>
-    <th width="30%">命令</th>
-    <th width="40%">描述</th>
-    <th width="30%">示例</th>
+    <th width="30%"> 命令 </th>
+    <th width="40%"> 描述 </th>
+    <th width="30%"> 示例 </th>
   </tr>
   <tr>
-    <td><code>/wordcloud [天数]</code></td>
-    <td>生成当前会话 (群聊或私聊) 的词云，可选择指定统计过去多少天的消息</td>
-    <td><code>/wordcloud</code> (使用默认天数) <br> <code>/wordcloud 3</code> (最近3天)</td>
+    <td> <code>/wordcloud [天数] </code> </td>
+    <td> 生成当前会话 (群聊或私聊) 的词云，可选择指定统计过去多少天的消息 </td>
+    <td> <code>/wordcloud </code> (使用默认天数) <br> <code>/wordcloud 3 </code> (最近 3 天)</td>
   </tr>
   <tr>
-    <td><code>/wc help</code></td>
-    <td>显示本插件的帮助信息，包括命令列表</td>
-    <td><code>/wc help</code></td>
+    <td> <code>/wc help </code> </td>
+    <td> 显示本插件的帮助信息，包括命令列表 </td>
+    <td> <code>/wc help </code> </td>
   </tr>
   <tr>
-    <td><code>/wc test</code></td>
-    <td>生成测试词云，无需历史数据</td>
-    <td><code>/wc test</code></td>
+    <td> <code>/wc test </code> </td>
+    <td> 生成测试词云，无需历史数据 </td>
+    <td> <code>/wc test </code> </td>
   </tr>
   <tr>
-    <td><code>/wc today</code></td>
-    <td>手动触发生成当前会话今天的词云</td>
-    <td><code>/wc today</code></td>
+    <td> <code>/wc today </code> </td>
+    <td> 手动触发生成当前会话今天的词云 </td>
+    <td> <code>/wc today </code> </td>
   </tr>
   <tr>
-    <td><code>/wc enable [群号]</code></td>
-    <td>在指定群聊启用词云功能，如果未提供群号，则在当前群聊启用 (管理员权限)</td>
-    <td><code>/wc enable 123456789</code></td>
+    <td> <code>/wc enable [群号] </code> </td>
+    <td> 在指定群聊启用词云功能，如果未提供群号，则在当前群聊启用 (管理员权限)</td>
+    <td> <code>/wc enable 123456789 </code> </td>
   </tr>
   <tr>
-    <td><code>/wc disable [群号]</code></td>
-    <td>在指定群聊禁用词云功能，如果未提供群号，则在当前群聊禁用 (管理员权限)</td>
-    <td><code>/wc disable 123456789</code></td>
+    <td> <code>/wc disable [群号] </code> </td>
+    <td> 在指定群聊禁用词云功能，如果未提供群号，则在当前群聊禁用 (管理员权限)</td>
+    <td> <code>/wc disable 123456789 </code> </td>
   </tr>
   <tr>
-    <td><code>/wc force_daily</code></td>
-    <td>强制为所有配置了每日词云的会话立即生成一次每日词云(管理员权限) </td>
-    <td><code>/wc force_daily</code></td>
+    <td> <code>/wc force_daily </code> </td>
+    <td> 强制为所有配置了每日词云的会话立即生成一次每日词云(管理员权限) </td>
+    <td> <code>/wc force_daily </code> </td>
   </tr>
 </table>
 
@@ -313,24 +313,24 @@ CloudRank 插件基于 AstrBot 平台开发：
 
 <table width="100%">
   <tr>
-    <th width="25%">关键词</th>
-    <th width="40%">功能描述</th>
-    <th width="35%">等效命令</th>
+    <th width="25%"> 关键词 </th>
+    <th width="40%"> 功能描述 </th>
+    <th width="35%"> 等效命令 </th>
   </tr>
   <tr>
-    <td>今日词云<br>获取今日词云<br>查看今日词云<br>生成今日词云</td>
-    <td>生成当前会话今天的词云图</td>
-    <td><code>/wc today</code></td>
+    <td> 今日词云<br>获取今日词云<br>查看今日词云<br>生成今日词云 </td>
+    <td> 生成当前会话今天的词云图 </td>
+    <td> <code>/wc today </code> </td>
   </tr>
   <tr>
-    <td>生成词云<br>查看词云<br>最近词云<br>历史词云</td>
-    <td>生成最近7天（或配置的默认天数）的词云图</td>
-    <td><code>/wordcloud</code></td>
+    <td> 生成词云<br>查看词云<br>最近词云<br>历史词云 </td>
+    <td> 生成最近 7 天（或配置的默认天数）的词云图 </td>
+    <td> <code>/wordcloud </code> </td>
   </tr>
   <tr>
-    <td>词云帮助<br>词云功能<br>词云说明<br>词云指令</td>
-    <td>显示词云插件的帮助信息</td>
-    <td><code>/wc help</code></td>
+    <td> 词云帮助<br>词云功能<br>词云说明<br>词云指令 </td>
+    <td> 显示词云插件的帮助信息 </td>
+    <td> <code>/wc help </code> </td>
   </tr>
 </table>
 
@@ -360,7 +360,7 @@ NATURAL_KEYWORDS = {
 
 > [!NOTE]
 >
-> <small><i>上图词云样例采用以下主要配置生成：`max_word_count`: 50, `min_word_length`: 2, `min_word_frequency`: 2, `min_font_size`: 8, `max_font_size`: 170, `background_color`: pink, `colormap`: magma, `font_path`: (使用内置霞鹜文楷), `shape`: circle.</i></small>
+> <small> <i> 上图词云样例采用以下主要配置生成：`max_word_count`: 50, `min_word_length`: 2, `min_word_frequency`: 2, `min_font_size`: 8, `max_font_size`: 170, `background_color`: pink, `colormap`: magma, `font_path`: (使用内置霞鹜文楷), `shape`: circle.</i> </small>
 
 ## 📁 项目结构 (简化)
 
@@ -402,7 +402,7 @@ AstrBot/data/plugin_data/cloudrank/
 - **自定义词云形状 (使用蒙版图片)**:
   1.  **准备蒙版图片**:
       - 创建一个图像文件 (推荐使用 `.png` 格式，背景透明更佳，但 `.jpg` 等常见格式也可以)
-      - 在图片中，**您希望词语出现的区域应该是深色（如黑色）**，而**希望留空的背景区域应该是浅色（如白色）**。词云生成器会将图片中接近纯黑色的部分作为词语填充的有效区域，纯白色部分则会忽略
+      - 在图片中，**您希望词语出现的区域应该是深色（如黑色）**，而 **希望留空的背景区域应该是浅色（如白色）**。词云生成器会将图片中接近纯黑色的部分作为词语填充的有效区域，纯白色部分则会忽略
       - 图片尺寸会影响最终词云的分辨率和细节，但插件会尝试适应。一个几百像素到一千像素宽高的图片通常效果不错
   2.  **放置蒙版图片**:
       - 将您的蒙版图片文件（例如 `my_mask.png`）放置到插件的数据目录下的 `resources/images/` 子目录中，这个目录的完整路径通常是 `AstrBot/data/plugin_data/cloudrank/resources/images/`，如果该 `images` 子目录不存在，插件在启动时会自动创建它
@@ -424,13 +424,13 @@ AstrBot/data/plugin_data/cloudrank/
 
 - **首次使用**: 首次生成词云或插件加载时，可能需要一些时间来初始化分词库 (如 `jieba`) 和其他资源
 - **中文字体**: 为确保中文在词云中正确显示，建议在配置中明确指定一个包含中文字符的字体路径 (`font_path`)。插件会尝试使用内置的霞鹜文楷字体，如果加载失败或需要特定字体，则此配置项非常重要
-- **资源存储**: 插件会在 AstrBot 的数据目录 (通常是 `AstrBot/data/plugin_data/cloudrank/` 或由 `StarTools.get_data_dir(PLUGIN_NAME)` 返回的路径) 下存储字体、停用词和生成的图片缓存。此目录包含三个主要子目录：`resources/`（存放字体和停用词）、`images/`（存放生成的词云图片）和`debug/`（存放调试信息）。请确保 AstrBot 运行的用户对此目录有读写权限，并有足够的存储空间
+- **资源存储**: 插件会在 AstrBot 的数据目录 (通常是 `AstrBot/data/plugin_data/cloudrank/` 或由 `StarTools.get_data_dir(PLUGIN_NAME)` 返回的路径) 下存储字体、停用词和生成的图片缓存。此目录包含三个主要子目录：`resources/`（存放字体和停用词）、`images/`（存放生成的词云图片）和 `debug/`（存放调试信息）。请确保 AstrBot 运行的用户对此目录有读写权限，并有足够的存储空间
 - **消息数据存储与 session_id 标准化**:
-  - 本插件的消息历史记录存储在 **AstrBot 核心的中央 SQLite 数据库**中 (通常是 `AstrBot/data/data_v3.db` 或类似路径)，具体表名为 `wordcloud_message_history`。插件本身不在其独立的插件数据目录下创建数据库文件
+  - 本插件的消息历史记录存储在 **AstrBot 核心的中央 SQLite 数据库** 中 (通常是 `AstrBot/data/data_v3.db` 或类似路径)，具体表名为 `wordcloud_message_history`。插件本身不在其独立的插件数据目录下创建数据库文件
   - 这一更改意味着，更新插件后，新记录的群聊消息将使用此标准 ID。旧的群聊消息如果之前是按其他 `session_id` 格式存储的，可能不会被包含在更新后的群聊词云查询中，除非进行数据迁移。查看或备份消息数据需要访问 AstrBot 的主数据库
 - **消息内容与统计范围**:
-  - 本插件设计的初衷是基于**文本内容**生成词云。因此，在记录消息时，只有那些实际包含文本的消息才会被存储到 `wordcloud_message_history` 数据库表中。纯图片、文件、系统提示、语音消息或大部分表情符号（如果它们没有附带文本描述）等非文本内容将**不会**被记录，也不会计入词云生成的消息总数中
-  - 因此，插件报告的"共统计了 X 条消息"或"共产生 X 条发言"是指在指定时间段内，**被插件记录下来的、包含文本内容的消息数量**，这个数量可能少于您在该聊天中看到的总事件数
+  - 本插件设计的初衷是基于 **文本内容** 生成词云。因此，在记录消息时，只有那些实际包含文本的消息才会被存储到 `wordcloud_message_history` 数据库表中。纯图片、文件、系统提示、语音消息或大部分表情符号（如果它们没有附带文本描述）等非文本内容将 **不会** 被记录，也不会计入词云生成的消息总数中
+  - 因此，插件报告的 "共统计了 X 条消息" 或 "共产生 X 条发言" 是指在指定时间段内，**被插件记录下来的、包含文本内容的消息数量**，这个数量可能少于您在该聊天中看到的总事件数
 - **性能考虑**: 记录和分析大量聊天数据可能会消耗一定的系统资源，对于非常活跃的机器人或服务器资源有限的情况，请适当调整历史记录天数和词云生成频率
 - **依赖冲突**: 确保 `requirements.txt` 中列出的依赖版本与您的 Python 环境和其他 AstrBot 插件兼容
 
@@ -528,8 +528,8 @@ AstrBot/data/plugin_data/cloudrank/
 **重要修复：**
 
 - 修复词云生成时包含群成员@提及 ID 的问题
-- 在`segment_text`函数中添加正则表达式过滤，自动移除@用户提及内容
-- 确保词云统计结果更加准确和美观，不再出现如"@6emasvii"等用户 ID
+- 在 `segment_text` 函数中添加正则表达式过滤，自动移除@用户提及内容
+- 确保词云统计结果更加准确和美观，不再出现如 "@6emasvii" 等用户 ID
 
 #### **v1.3.3**（2025-05-23）
 
@@ -544,7 +544,7 @@ AstrBot/data/plugin_data/cloudrank/
 **优化与修复：**
 
 - 确保每日词云和排行榜统计准确反映当天数据
-- 修复 `/wc force_daily`指令 `no attribute 'data_dir'`的问题
+- 修复 `/wc force_daily` 指令 `no attribute 'data_dir'` 的问题
 - 修复每日词云可能无法正常生成的问题
 - 解决排行榜 SQL 查询和消息构建中的问题
 - 统一排行榜输出样式，修复会话 ID 格式错误
